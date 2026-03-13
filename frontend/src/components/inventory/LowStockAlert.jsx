@@ -6,6 +6,8 @@ export default function LowStockAlert({ items, onViewLowStock }) {
   return (
     <div
       className="flex items-center gap-3 p-4 rounded-xl"
+      role="status"
+      aria-live="polite"
       style={{ backgroundColor: 'var(--color-error-bg)', border: '1px solid rgba(248,113,113,0.2)' }}
     >
       <AlertTriangle size={20} style={{ color: 'var(--color-error)' }} className="shrink-0" />
@@ -20,8 +22,9 @@ export default function LowStockAlert({ items, onViewLowStock }) {
       </div>
       {onViewLowStock && (
         <button
+          type="button"
           onClick={onViewLowStock}
-          className="text-xs font-medium px-3 py-1.5 rounded-lg shrink-0"
+          className="text-xs font-medium px-3 py-1.5 rounded-lg shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40"
           style={{ backgroundColor: 'rgba(248,113,113,0.15)', color: 'var(--color-error)' }}
         >
           View All

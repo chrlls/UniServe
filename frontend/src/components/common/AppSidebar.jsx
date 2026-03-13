@@ -27,6 +27,8 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { preloadDashboardIntent, preloadReportsIntent } from '../dashboard/chartPrefetch'
+// eslint-disable-next-line no-unused-vars -- used as <motion.div> JSX element
 import { motion } from 'framer-motion'
 
 const navItems = [
@@ -164,6 +166,17 @@ export function AppSidebar() {
     })
   }
 
+  const prefetchByIntent = (url) => {
+    if (url === '/admin/dashboard') {
+      void preloadDashboardIntent()
+      return
+    }
+
+    if (url === '/admin/reports') {
+      void preloadReportsIntent()
+    }
+  }
+
   return (
     <Sidebar
       variant="inset"
@@ -236,6 +249,9 @@ export function AppSidebar() {
                           >
                             <Link
                               to={item.url}
+                              onMouseEnter={() => prefetchByIntent(item.url)}
+                              onFocus={() => prefetchByIntent(item.url)}
+                              onTouchStart={() => prefetchByIntent(item.url)}
                               onClick={(event) => {
                                 event.preventDefault()
                                 transitionTo(item.url)
@@ -283,6 +299,9 @@ export function AppSidebar() {
                               >
                                 <Link
                                   to={item.url}
+                                  onMouseEnter={() => prefetchByIntent(item.url)}
+                                  onFocus={() => prefetchByIntent(item.url)}
+                                  onTouchStart={() => prefetchByIntent(item.url)}
                                   onClick={(event) => {
                                     event.preventDefault()
                                     transitionTo(item.url)

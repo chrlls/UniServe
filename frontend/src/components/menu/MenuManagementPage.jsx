@@ -6,7 +6,6 @@ import {
 import menuService from '../../services/menuService';
 import categoryService from '../../services/categoryService';
 import MenuForm from './MenuForm';
-import LoadingSpinner from '../common/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { MenuManagementSkeleton } from '@/components/skeletons/AdminSkeletons';
 
 export default function MenuManagementPage() {
   const [menuItems, setMenuItems] = useState([]);
@@ -125,7 +125,7 @@ export default function MenuManagementPage() {
     }
   }
 
-  if (loading) return <LoadingSpinner message="Loading menu data..." />;
+  if (loading) return <MenuManagementSkeleton />;
 
   if (error) {
     return (

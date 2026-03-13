@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Save, User, Bell, Store, Shield } from 'lucide-react';
+import { Save, User, Bell, Store, Shield, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import userService from '../../services/userService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,57 +10,116 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 
+const NOTIFICATION_SETTINGS_KEY = 'settings_notifications';
+const CANTEEN_SETTINGS_KEY = 'settings_canteen';
+
+function readLocalObject(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null ? { ...fallback, ...parsed } : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
 
   // Profile tab
   const [profile, setProfile] = useState({
     name: user?.name ?? '',
     email: user?.email ?? '',
   });
+  const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
+  const [profileError, setProfileError] = useState('');
 
   // Security tab
   const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' });
+  const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [passwordSaved, setPasswordSaved] = useState(false);
 
   // Notifications tab
-  const [notifications, setNotifications] = useState({
+  const [notifications, setNotifications] = useState(() => readLocalObject(NOTIFICATION_SETTINGS_KEY, {
     lowStock: true,
     newOrders: true,
     dailyReport: false,
-  });
+  }));
+  const [notificationsSaved, setNotificationsSaved] = useState(false);
 
   // Canteen tab
-  const [canteen, setCanteen] = useState({
+  const [canteen, setCanteen] = useState(() => readLocalObject(CANTEEN_SETTINGS_KEY, {
     name: 'School Canteen',
     currency: '₱',
     taxRate: '0',
-  });
+  }));
+  const [canteenSaved, setCanteenSaved] = useState(false);
 
-  function handleProfileSave(e) {
-    e.preventDefault();
-    // Placeholder: wire to a userService.updateProfile call to persist
-    setProfileSaved(true);
-    setTimeout(() => setProfileSaved(false), 2000);
+  if (!user) {
+    return null;
   }
 
-  function handlePasswordSave(e) {
+  async function handleProfileSave(e) {
+    e.preventDefault();
+    setProfileError('');
+    setProfileSaving(true);
+    try {
+      const updatedUser = await userService.update(user.id, {
+        name: profile.name,
+        email: profile.email,
+        role: user.role,
+      });
+
+      setProfile({ name: updatedUser.name, email: updatedUser.email });
+      await refreshUser();
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2000);
+    } catch (error) {
+      setProfileError(error.message ?? 'Unable to save profile.');
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
+  async function handlePasswordSave(e) {
     e.preventDefault();
     setPasswordError('');
     if (!passwords.current) { setPasswordError('Current password is required.'); return; }
     if (passwords.next.length < 8) { setPasswordError('New password must be at least 8 characters.'); return; }
     if (passwords.next !== passwords.confirm) { setPasswordError('Passwords do not match.'); return; }
-    // Placeholder: wire to userService.changePassword
-    setPasswordSaved(true);
-    setPasswords({ current: '', next: '', confirm: '' });
-    setTimeout(() => setPasswordSaved(false), 2000);
+
+    setPasswordSaving(true);
+    try {
+      await userService.update(user.id, {
+        name: profile.name,
+        email: profile.email,
+        role: user.role,
+        password: passwords.next,
+      });
+      setPasswordSaved(true);
+      setPasswords({ current: '', next: '', confirm: '' });
+      setTimeout(() => setPasswordSaved(false), 2000);
+    } catch (error) {
+      setPasswordError(error.message ?? 'Unable to update password.');
+    } finally {
+      setPasswordSaving(false);
+    }
+  }
+
+  function handleNotificationSave() {
+    localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(notifications));
+    setNotificationsSaved(true);
+    setTimeout(() => setNotificationsSaved(false), 2000);
   }
 
   function handleCanteenSave(e) {
     e.preventDefault();
-    // Placeholder: wire to a system settings service
+    localStorage.setItem(CANTEEN_SETTINGS_KEY, JSON.stringify(canteen));
+    setCanteenSaved(true);
+    setTimeout(() => setCanteenSaved(false), 2000);
   }
 
   return (
@@ -94,6 +154,7 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleProfileSave} className="space-y-4">
+                {profileError && <p className="text-sm text-destructive">{profileError}</p>}
                 <div className="space-y-1">
                   <Label htmlFor="profile-name">Name</Label>
                   <Input
@@ -114,8 +175,8 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="flex items-center gap-3 pt-2">
-                  <Button type="submit" className="gap-2">
-                    <Save size={15} /> Save Profile
+                  <Button type="submit" className="gap-2" disabled={profileSaving}>
+                    {profileSaving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} {profileSaving ? 'Saving...' : 'Save Profile'}
                   </Button>
                   {profileSaved && <span className="text-sm text-green-500">Saved!</span>}
                 </div>
@@ -168,8 +229,8 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="flex items-center gap-3 pt-2">
-                  <Button type="submit" className="gap-2">
-                    <Save size={15} /> Update Password
+                  <Button type="submit" className="gap-2" disabled={passwordSaving}>
+                    {passwordSaving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} {passwordSaving ? 'Updating...' : 'Update Password'}
                   </Button>
                   {passwordSaved && <span className="text-sm text-green-500">Password updated!</span>}
                 </div>
@@ -219,9 +280,10 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="pt-2">
-                <Button className="gap-2">
+                <Button type="button" className="gap-2" onClick={handleNotificationSave}>
                   <Save size={15} /> Save Preferences
                 </Button>
+                {notificationsSaved && <span className="ml-3 text-sm text-green-500">Preferences saved!</span>}
               </div>
             </CardContent>
           </Card>
@@ -270,6 +332,7 @@ export default function SettingsPage() {
                   <Button type="submit" className="gap-2">
                     <Save size={15} /> Save Settings
                   </Button>
+                  {canteenSaved && <span className="ml-3 text-sm text-green-500">Settings saved!</span>}
                 </div>
               </form>
             </CardContent>

@@ -1,7 +1,9 @@
 ﻿import { useState } from 'react';
+// eslint-disable-next-line no-unused-vars -- used as <motion.div> JSX element
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Shield, BarChart2, Zap, UtensilsCrossed } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import canteenImage from '@/assets/Images/blue-tray.png';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,38 +16,6 @@ const roleRedirects = {
   customer: '/menu',
 };
 
-const FEATURES = [
-  { icon: Shield,    text: 'Secure, role-aware workflows for canteen staff.' },
-  { icon: BarChart2, text: 'Real-time visibility across orders and inventory.' },
-  { icon: Zap,       text: 'Faster daily service with fewer manual steps.' },
-];
-
-const panelVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.2, delayChildren: 0.5 } },
-};
-const panelItem = {
-  hidden: { opacity: 0, y: 28 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
-};
-const timelineContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.32, delayChildren: 0.9 } },
-};
-const timelineItem = {
-  hidden: { opacity: 0, x: -32, scale: 0.97 },
-  visible: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] } },
-};
-const timelineAccent = {
-  hidden: { scaleY: 0 },
-  visible: { scaleY: 1, transition: { duration: 0.5, ease: 'easeOut', delay: 0.2 } },
-};
-const fieldAnim = {
-  initial: { opacity: 0, y: -10 },
-  animate: { opacity: 1, y: 0 },
-  exit:    { opacity: 0, y: -8 },
-  transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
-};
 
 export default function Login() {
   const { login, register } = useAuth();
@@ -119,259 +89,309 @@ export default function Login() {
 
   return (
     <LayoutGroup>
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#EEF2F7] px-4 py-10">
-      <motion.div
-        className="w-full max-w-[960px] bg-white rounded-2xl shadow-xl grid grid-cols-1 lg:grid-cols-[55%_45%]"
-        layout
-        initial={{ opacity: 0, y: 32 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1], layout: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } }}
-      >
+      <div className="min-h-screen w-full flex items-center justify-center p-4 md:p-6 lg:p-8 bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
+        <motion.div
+          className="w-full max-w-[1000px] bg-background rounded-2xl md:rounded-[2.5rem] shadow-[0_4px_6px_rgba(0,0,0,0.03),0_24px_64px_rgba(0,0,0,0.13)] overflow-hidden"
+          layout
+          initial={{ opacity: 0, y: 32 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.75,
+            ease: [0.22, 1, 0.36, 1],
+            layout: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+          }}
+        >
+          <div className="grid lg:grid-cols-[58%_42%] gap-0 min-h-[700px]">
+            {/* Left Side - Hero Image Panel */}
+            <div className="relative lg:rounded-[2rem] m-0 lg:m-4 overflow-hidden min-h-[300px] lg:min-h-0 order-2 lg:order-1">
+              {/* Background Image */}
+              <img
+                src={canteenImage}
+                alt="Blue cafeteria tray with plated campus meal"
+                className="absolute inset-0 w-full h-full object-cover object-[center_28%]"
+              />
 
-        {/* Left: Marketing panel (desktop only) */}
-        <motion.div layout className="hidden lg:flex flex-col justify-between p-10 bg-white rounded-l-2xl overflow-hidden" variants={panelVariants} initial="hidden" animate="visible">
+              {/* Left-to-right readability overlay — preserves tray visibility */}
+              <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(2,6,23,0.58)_0%,rgba(2,6,23,0.44)_18%,rgba(2,6,23,0.24)_38%,rgba(2,6,23,0.08)_56%,rgba(2,6,23,0.01)_72%,rgba(2,6,23,0)_84%)]" />
+              {/* Subtle top vignette */}
+              <div className="absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(2,6,23,0.12)_0%,rgba(2,6,23,0)_100%)]" />
 
-          {/* Wordmark */}
-          <motion.div className="flex items-center gap-3" variants={panelItem}>
-            <div className="w-12 h-12 rounded-xl bg-[#1B3A6B] flex items-center justify-center">
-              <UtensilsCrossed className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-[#0F1C2E] tracking-tight">UniServe</span>
-          </motion.div>
-
-          {/* Hero headline */}
-          <motion.div className="flex-1 flex flex-col justify-center py-10" variants={panelItem}>
-            <h1 className="text-4xl font-bold text-[#0F1C2E] leading-tight mb-4">
-              Canteen management,<br />simplified for<br />everyday campus <br/>service.
-            </h1>
-            <p className="text-[#4B5F76] text-base leading-relaxed max-w-sm">
-              UniServe gives your team the tools to manage orders, track inventory,
-              and serve students faster.
-            </p>
-          </motion.div>
-
-          {/* Feature bullets — timeline sequence */}
-          <motion.div className="space-y-3" variants={timelineContainer} initial="hidden" animate="visible">
-            {FEATURES.map(({ icon: Icon, text }) => (
-              <motion.div
-                key={text}
-                variants={timelineItem}
-                className="relative flex items-center gap-3 rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 overflow-hidden"
-              >
-                {/* Left accent line that grows in */}
-                <motion.span
-                  variants={timelineAccent}
-                  className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl bg-[#2563EB] origin-top"
-                />
-                <Icon className="w-5 h-5 text-[#2563EB] shrink-0" />
-                <span className="text-sm text-[#4B5F76]">{text}</span>
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.div>
-
-        {/* Right: Form card */}
-        <motion.div layout className="flex items-center justify-center bg-[#EEF2F7] p-4 lg:p-6 overflow-hidden rounded-2xl lg:rounded-l-none lg:rounded-r-2xl">
-          <motion.div layout className="bg-white rounded-2xl shadow-lg w-full p-8">
-
-            {/* Mobile wordmark */}
-            <div className="flex items-center gap-3 mb-6 lg:hidden">
-              <div className="w-10 h-10 rounded-xl bg-[#1B3A6B] flex items-center justify-center">
-                <UtensilsCrossed className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-lg font-bold text-[#0F1C2E] tracking-tight">UniServe</span>
-            </div>
-
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                layout
-                key={mode}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25, ease: 'easeInOut', layout: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } }}
-              >
-
-            {/* Heading */}
-            <div className="mb-6">
-                <h2 className="text-2xl font-bold text-[#0F1C2E]">
-                  {mode === 'login' ? 'Sign in' : 'Create account'}
-                </h2>
-                <p className="text-sm text-[#4B5F76] mt-1">
-                  {mode === 'login'
-                    ? 'Welcome back. Enter your account details to continue.'
-                    : 'Fill in the details below to create your account.'}
-                </p>
-              </div>
-
-            {/* Global error */}
-            {error && (
-              <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} noValidate className="space-y-4">
-
-              {/* Name - register only */}
-              {mode === 'register' && (
-                <motion.div
-                  className="space-y-1.5"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <Label htmlFor="name" className="text-sm font-medium text-[#0F1C2E]">Full name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    type="text"
-                    autoComplete="name"
-                    placeholder="Your full name"
-                    value={form.name}
-                    onChange={handleChange}
-                    className={fieldErrors.name ? 'border-red-400 focus-visible:ring-red-300' : ''}
-                  />
-                  {fieldErrors.name && <p className="text-xs text-red-500">{fieldErrors.name}</p>}
-                </motion.div>
-              )}
-
-              {/* Email */}
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-sm font-medium text-[#0F1C2E]">Email address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8] pointer-events-none" />
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    value={form.email}
-                    onChange={handleChange}
-                    className={`pl-10 ${fieldErrors.email ? 'border-red-400 focus-visible:ring-red-300' : ''}`}
-                  />
+              <div className="relative z-10 flex h-full items-start p-6 lg:p-8">
+                <div className="max-w-[20rem] space-y-3.5 pt-7 lg:pt-10">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-white/80">
+                    UniServe
+                  </p>
+                  <div className="space-y-3">
+                    <h2 className="max-w-[10ch] text-[1.625rem] font-medium leading-[1.12] tracking-[-0.035em] text-white lg:text-[2.4rem]">
+                      Serve faster.<br />
+                      Manage smarter.<br />
+                      Feed campus better.
+                    </h2>
+                    <p className="max-w-[32ch] text-[13px] leading-[1.65] text-white/72 lg:text-[14px]">
+                      Manage orders, inventory, and service with one streamlined platform.
+                    </p>
+                  </div>
                 </div>
-                {fieldErrors.email && <p className="text-xs text-red-500">{fieldErrors.email}</p>}
               </div>
+            </div>
 
-              {/* Password */}
-              <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-sm font-medium text-[#0F1C2E]">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8] pointer-events-none" />
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                    placeholder="Password"
-                    value={form.password}
-                    onChange={handleChange}
-                    className={`pl-10 pr-10 ${fieldErrors.password ? 'border-red-400 focus-visible:ring-red-300' : ''}`}
-                  />
+            {/* Right Side - Login/Register Form */}
+            <motion.div
+              layout
+              className="flex flex-col items-center justify-center p-6 lg:p-10 order-1 lg:order-2"
+            >
+              <div
+                className="bg-white rounded-2xl w-full p-8 max-w-[420px] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.05),0_20px_52px_rgba(0,0,0,0.09)] ring-1 ring-slate-900/[0.05]"
+                style={{ transform: 'none', transformOrigin: '50% 50% 0px' }}
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    layout
+                    key={mode}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      duration: 0.25,
+                      ease: 'easeInOut',
+                      layout: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+                    }}
+                  >
+                    {/* Heading */}
+                    <div className="mb-7">
+                      <h1 className="text-[27px] font-semibold tracking-[-0.02em] text-foreground">
+                        {mode === 'login' ? 'Sign in' : 'Create account'}
+                      </h1>
+                      <p className="text-[13.5px] leading-[1.5] text-muted-foreground mt-1.5">
+                        {mode === 'login'
+                          ? 'Welcome back. Enter your account details to continue.'
+                          : 'Fill in the details below to create your account.'}
+                      </p>
+                    </div>
+
+                    {/* Global error */}
+                    {error && (
+                      <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+                        {error}
+                      </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                      {/* Name - register only */}
+                      {mode === 'register' && (
+                        <motion.div
+                          className="space-y-2"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                          <Label htmlFor="name" className="text-[13px] font-medium">
+                            Full name
+                          </Label>
+                          <Input
+                            id="name"
+                            name="name"
+                            type="text"
+                            autoComplete="name"
+                            placeholder="Your full name"
+                            value={form.name}
+                            onChange={handleChange}
+                            className={`h-[50px] rounded-xl ${
+                              fieldErrors.name
+                                ? 'border-red-400 focus-visible:ring-red-300'
+                                : 'border-slate-300 focus-visible:ring-blue-400/25 focus-visible:border-blue-400'
+                            }`}
+                          />
+                          {fieldErrors.name && (
+                            <p className="text-xs text-red-500">{fieldErrors.name}</p>
+                          )}
+                        </motion.div>
+                      )}
+
+                      {/* Email */}
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-[13px] font-medium">
+                          Email address
+                        </Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            autoComplete="email"
+                            placeholder="you@example.com"
+                            value={form.email}
+                            onChange={handleChange}
+                            className={`h-[50px] pl-10 rounded-xl ${
+                              fieldErrors.email
+                                ? 'border-red-400 focus-visible:ring-red-300'
+                                : 'border-slate-300 focus-visible:ring-blue-400/25 focus-visible:border-blue-400'
+                            }`}
+                          />
+                        </div>
+                        {fieldErrors.email && (
+                          <p className="text-xs text-red-500">{fieldErrors.email}</p>
+                        )}
+                      </div>
+
+                      {/* Password */}
+                      <div className="space-y-2">
+                        <Label htmlFor="password" className="text-[13px] font-medium">
+                          Password
+                        </Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                          <Input
+                            id="password"
+                            name="password"
+                            type={showPassword ? 'text' : 'password'}
+                            autoComplete={
+                              mode === 'login' ? 'current-password' : 'new-password'
+                            }
+                            placeholder="Password"
+                            value={form.password}
+                            onChange={handleChange}
+                            className={`h-[50px] pl-10 pr-10 rounded-xl ${
+                              fieldErrors.password
+                                ? 'border-red-400 focus-visible:ring-red-300'
+                                : 'border-slate-300 focus-visible:ring-blue-400/25 focus-visible:border-blue-400'
+                            }`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((v) => !v)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            tabIndex={-1}
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                        {fieldErrors.password && (
+                          <p className="text-xs text-red-500">{fieldErrors.password}</p>
+                        )}
+                      </div>
+
+                      {/* Password confirm - register only */}
+                      {mode === 'register' && (
+                        <motion.div
+                          className="space-y-2"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                          <Label
+                            htmlFor="password_confirmation"
+                            className="text-[13px] font-medium"
+                          >
+                            Confirm password
+                          </Label>
+                          <Input
+                            id="password_confirmation"
+                            name="password_confirmation"
+                            type="password"
+                            autoComplete="new-password"
+                            placeholder="Confirm password"
+                            value={form.password_confirmation}
+                            onChange={handleChange}
+                            className={`h-[50px] rounded-xl ${
+                              fieldErrors.password_confirmation
+                                ? 'border-red-400 focus-visible:ring-red-300'
+                                : 'border-slate-300 focus-visible:ring-blue-400/25 focus-visible:border-blue-400'
+                            }`}
+                          />
+                          {fieldErrors.password_confirmation && (
+                            <p className="text-xs text-red-500">
+                              {fieldErrors.password_confirmation}
+                            </p>
+                          )}
+                        </motion.div>
+                      )}
+
+                      {/* Remember me + Forgot password - login only */}
+                      {mode === 'login' && (
+                        <motion.div
+                          className="flex items-center justify-between"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="remember"
+                              checked={form.remember}
+                              onCheckedChange={(checked) =>
+                                setForm((p) => ({ ...p, remember: checked === true }))
+                              }
+                            />
+                            <Label
+                              htmlFor="remember"
+                              className="text-sm text-muted-foreground cursor-pointer font-normal"
+                            >
+                              Remember me
+                            </Label>
+                          </div>
+                          <Link
+                            to="#"
+                            className="text-sm text-[#2563EB] hover:underline"
+                          >
+                            Forgot password?
+                          </Link>
+                        </motion.div>
+                      )}
+
+                      {/* Submit */}
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full h-12 mt-2 rounded-lg text-base font-semibold text-white relative 
+                        isolate overflow-hidden bg-gradient-to-r from-[#00033D] to-[#0033FF] ring-1 ring-white/10 
+                        shadow-[0_6px_18px_rgba(0,16,120,0.26)] transform-gpu will-change-transform 
+                        transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] 
+                        hover:-translate-y-[0.5px] hover:shadow-[0_8px_22px_rgba(0,22,140,0.34)] active:translate-y-0 
+                        active:scale-[0.997] disabled:opacity-80 disabled:cursor-not-allowed [&>*]:relative [&>*]:z-10 before:content-[''] 
+                        before:absolute before:top-0 before:left-[-100%] before:h-full before:w-full 
+                        before:bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.16),transparent)] before:transition-[left] 
+                        before:duration-[700ms] before:ease-in-out hover:before:left-[100%]"
+                        >
+                        {isSubmitting
+                          ? mode === 'login'
+                            ? 'Signing in...'
+                            : 'Creating account...'
+                          : mode === 'login'
+                          ? 'Sign in'
+                          : 'Create account'}
+                      </Button>
+                    </form>
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Mode toggle */}
+                <p className="mt-5 text-sm text-center text-muted-foreground">
+                  {mode === 'login'
+                    ? "Don't have an account? "
+                    : 'Already have an account? '}
                   <button
                     type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#4B5F76] transition-colors"
-                    tabIndex={-1}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onClick={toggleMode}
+                    className="font-medium text-[#2563EB] hover:text-[#1d4ed8] hover:underline transition-colors duration-150"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {mode === 'login' ? 'Sign up' : 'Sign in'}
                   </button>
-                </div>
-                {fieldErrors.password && <p className="text-xs text-red-500">{fieldErrors.password}</p>}
+                </p>
               </div>
-
-              {/* Password confirm - register only */}
-              {mode === 'register' && (
-                <motion.div
-                  className="space-y-1.5"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <Label htmlFor="password_confirmation" className="text-sm font-medium text-[#0F1C2E]">
-                    Confirm password
-                  </Label>
-                  <Input
-                    id="password_confirmation"
-                    name="password_confirmation"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="Confirm password"
-                    value={form.password_confirmation}
-                    onChange={handleChange}
-                    className={fieldErrors.password_confirmation ? 'border-red-400 focus-visible:ring-red-300' : ''}
-                  />
-                  {fieldErrors.password_confirmation && (
-                    <p className="text-xs text-red-500">{fieldErrors.password_confirmation}</p>
-                  )}
-                </motion.div>
-              )}
-
-              {/* Remember me + Forgot password - login only */}
-              {mode === 'login' && (
-                <motion.div
-                  className="flex items-center justify-between"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="remember"
-                      checked={form.remember}
-                      onCheckedChange={(checked) =>
-                        setForm((p) => ({ ...p, remember: checked === true }))
-                      }
-                    />
-                    <Label htmlFor="remember" className="text-sm text-[#4B5F76] cursor-pointer font-normal">
-                      Remember me
-                    </Label>
-                  </div>
-                  <Link to="#" className="text-sm text-[#2563EB] hover:underline">
-                    Forgot password?
-                  </Link>
-                </motion.div>
-              )}
-
-              {/* Submit */}
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full h-12 bg-[#1B3A6B] hover:bg-[#152E58] text-white text-base font-semibold rounded-lg mt-2"
-              >
-                {isSubmitting
-                  ? (mode === 'login' ? 'Signing in...' : 'Creating account...')
-                  : (mode === 'login' ? 'Sign in' : 'Create account')}
-              </Button>
-            </form>
-
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Mode toggle */}
-            <p className="mt-5 text-sm text-center text-[#4B5F76]">
-              {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-              <button
-                type="button"
-                onClick={toggleMode}
-                className="font-semibold text-[#1B3A6B] hover:underline"
-              >
-                {mode === 'login' ? 'Sign up' : 'Sign in'}
-              </button>
-            </p>
-
-
-          </motion.div>
+            </motion.div>
+          </div>
         </motion.div>
-
-      </motion.div>
-    </div>
+      </div>
     </LayoutGroup>
   );
 }

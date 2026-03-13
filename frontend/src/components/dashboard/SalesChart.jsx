@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 const chartConfig = {
@@ -16,10 +16,17 @@ export default function SalesChart({ data }) {
   }));
 
   return (
-    <ChartContainer config={chartConfig} className="h-[200px] w-full">
+    <ChartContainer config={chartConfig} className="h-[240px] w-full">
       <BarChart data={formatted}>
         <CartesianGrid vertical={false} strokeDasharray="3 3" />
         <XAxis dataKey="shortDate" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 11 }} />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tick={{ fontSize: 10 }}
+          width={55}
+          tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
+        />
         <ChartTooltip
           cursor={false}
           content={

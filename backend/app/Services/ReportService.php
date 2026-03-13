@@ -136,7 +136,7 @@ class ReportService
     private function resolveRange(?string $startDate, ?string $endDate): array
     {
         $end = $endDate !== null ? Carbon::parse($endDate) : now();
-        $start = $startDate !== null ? Carbon::parse($startDate) : $end->copy()->subDays(29);
+        $start = $startDate !== null ? Carbon::parse($startDate) : $end->copy()->subDays(6);
 
         if ($start->greaterThan($end)) {
             [$start, $end] = [$end, $start];

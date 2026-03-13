@@ -1,4 +1,5 @@
 ﻿
+import { useEffect, useMemo, useState } from 'react';
 import "@theme-toggles/react/css/Classic.css";
 import { Classic } from "@theme-toggles/react";
 import { Search, Bell, ChevronRight, SidebarIcon } from "lucide-react";
@@ -20,19 +21,101 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useNavigate } from "react-router-dom";
+import orderService from "@/services/orderService";
+import inventoryService from "@/services/inventoryService";
 import { toast } from "sonner";
+
+function orderStatusText(status) {
+  switch (status) {
+    case 'pending':
+      return 'is awaiting preparation';
+    case 'preparing':
+      return 'is now being prepared';
+    case 'ready':
+      return 'is ready for pickup';
+    case 'completed':
+      return 'has been completed';
+    case 'cancelled':
+      return 'was cancelled';
+    default:
+      return 'was updated';
+  }
+}
 
 export function Topbar({ title = "Dashboard", breadcrumbs }) {
   const { toggleSidebar } = useSidebar();
   const { user, logout } = useAuth();
   const { isDark, toggle, toggleRef } = useTheme();
   const navigate = useNavigate();
+  const [notifications, setNotifications] = useState([]);
 
   const fullName = user?.name ?? "Account";
   const roleLabel = user?.role ?? "No role assigned";
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "NA";
+
+  const unreadCount = notifications.length;
+
+  const normalizedNotifications = useMemo(() => notifications.slice(0, 5), [notifications]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadNotifications() {
+      if (!user) {
+        if (isActive) setNotifications([]);
+        return;
+      }
+
+      try {
+        const [orders, inventoryData] = await Promise.all([
+          orderService.getAll(),
+          user.role === 'admin' || user.role === 'cashier'
+            ? inventoryService.getAll({ low_stock_only: true })
+            : Promise.resolve({ inventoryItems: [] }),
+        ]);
+
+        const orderNotifications = orders
+          .slice(0, 4)
+          .map((order) => ({
+            id: `order-${order.id}-${order.updated_at ?? order.created_at ?? order.ordered_at}`,
+            title: `Order ${order.order_number}`,
+            message: `Status ${orderStatusText(order.status)}.`,
+            timestamp: new Date(order.updated_at ?? order.created_at ?? order.ordered_at ?? Date.now()).getTime(),
+          }));
+
+        const lowStockNotifications = (inventoryData.inventoryItems ?? [])
+          .slice(0, 2)
+          .map((item) => ({
+            id: `stock-${item.id}-${item.updated_at ?? item.created_at}`,
+            title: 'Low Stock Alert',
+            message: `${item.name} is at ${item.stock_quantity} remaining.`,
+            timestamp: new Date(item.updated_at ?? item.created_at ?? Date.now()).getTime(),
+          }));
+
+        const merged = [...orderNotifications, ...lowStockNotifications]
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, 5);
+
+        if (isActive) {
+          setNotifications(merged);
+        }
+      } catch {
+        if (isActive) {
+          setNotifications([]);
+        }
+      }
+    }
+
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 45000);
+
+    return () => {
+      isActive = false;
+      clearInterval(interval);
+    };
+  }, [user]);
 
   const handleSignOut = async () => {
     try {
@@ -125,44 +208,30 @@ export function Topbar({ title = "Dashboard", breadcrumbs }) {
                 title="View notifications"
               >
                 <Bell className="h-4 w-4" />
-                <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]" aria-label="5 unread notifications">
-                  5
-                </Badge>
+                {unreadCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]" aria-label={`${unreadCount} unread notifications`}>
+                    {Math.min(unreadCount, 9)}
+                  </Badge>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">New Order Placed</p>
-                  <p className="text-xs text-muted-foreground">Table 4 placed a new order</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">Low Stock Alert</p>
-                  <p className="text-xs text-muted-foreground">Chicken Adobo stock is running low</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">Order Ready</p>
-                  <p className="text-xs text-muted-foreground">Order #ORD-20260311-0042 is ready for pickup</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">Daily Report</p>
-                  <p className="text-xs text-muted-foreground">Today's sales report is now available</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">New User Registered</p>
-                  <p className="text-xs text-muted-foreground">A new customer account was created</p>
-                </div>
-              </DropdownMenuItem>
+              {normalizedNotifications.length === 0 ? (
+                <DropdownMenuItem disabled>
+                  <p className="text-xs text-muted-foreground">No recent notifications.</p>
+                </DropdownMenuItem>
+              ) : (
+                normalizedNotifications.map((notification) => (
+                  <DropdownMenuItem key={notification.id}>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-sm font-medium">{notification.title}</p>
+                      <p className="text-xs text-muted-foreground">{notification.message}</p>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -176,7 +245,7 @@ export function Topbar({ title = "Dashboard", breadcrumbs }) {
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage
-                    src="/placeholder-user.jpg"
+                    src={user?.avatar_url}
                     alt={`${fullName} avatar`}
                     className="object-cover"
                   />

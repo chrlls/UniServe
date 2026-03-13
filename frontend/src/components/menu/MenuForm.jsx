@@ -106,24 +106,21 @@ export default function MenuForm({ item = null, categories, onSave, onCancel }) 
     return <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{msgs[0]}</p>;
   }
 
-  const inputStyle = {
-    backgroundColor: 'var(--color-input-bg)',
-    border: '1px solid var(--color-border-subtle)',
-    color: 'var(--color-text)',
-  };
+  const fieldClass = 'w-full rounded-lg bg-muted/45 px-3 py-2 text-sm outline-none ring-0 transition focus:bg-muted/60 focus:ring-2 focus:ring-primary/20';
+  const labelClass = 'mb-1 block text-sm font-medium text-muted-foreground';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {formError && (
-        <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--color-error-bg)', color: 'var(--color-error)' }}>
+        <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
           {formError}
         </div>
       )}
 
       {/* Category */}
       <div>
-        <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Category</label>
-        <select name="category_id" value={form.category_id} onChange={handleChange} className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={inputStyle}>
+        <label className={labelClass}>Category</label>
+        <select name="category_id" value={form.category_id} onChange={handleChange} className={fieldClass}>
           <option value="">Select category</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
@@ -132,29 +129,29 @@ export default function MenuForm({ item = null, categories, onSave, onCancel }) 
 
       {/* Name */}
       <div>
-        <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Name</label>
-        <input type="text" name="name" value={form.name} onChange={handleChange} className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={inputStyle} />
+        <label className={labelClass}>Name</label>
+        <input type="text" name="name" value={form.name} onChange={handleChange} className={fieldClass} />
         <FieldError name="name" />
       </div>
 
       {/* Description */}
       <div>
-        <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Description</label>
-        <textarea name="description" value={form.description} onChange={handleChange} rows={2} className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none" style={inputStyle} />
+        <label className={labelClass}>Description</label>
+        <textarea name="description" value={form.description} onChange={handleChange} rows={2} className={`${fieldClass} resize-none`} />
         <FieldError name="description" />
       </div>
 
       {/* Price + Availability */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Price</label>
-          <input type="number" name="price" value={form.price} onChange={handleChange} step="0.01" min="0.01" className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={inputStyle} />
+          <label className={labelClass}>Price</label>
+          <input type="number" name="price" value={form.price} onChange={handleChange} step="0.01" min="0.01" className={fieldClass} />
           <FieldError name="price" />
         </div>
         <div className="flex items-end pb-2">
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" name="is_available" checked={form.is_available} onChange={handleChange} className="w-4 h-4 rounded accent-green-500" />
-            <span className="text-sm" style={{ color: 'var(--color-text)' }}>Available</span>
+            <span className="text-sm text-foreground">Available</span>
           </label>
         </div>
       </div>
@@ -162,36 +159,35 @@ export default function MenuForm({ item = null, categories, onSave, onCancel }) 
       {/* Stock fields */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Stock Quantity</label>
-          <input type="number" name="stock_quantity" value={form.stock_quantity} onChange={handleChange} min="0" className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={inputStyle} />
+          <label className={labelClass}>Stock Quantity</label>
+          <input type="number" name="stock_quantity" value={form.stock_quantity} onChange={handleChange} min="0" className={fieldClass} />
           <FieldError name="stock_quantity" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Low Stock Threshold</label>
-          <input type="number" name="low_stock_threshold" value={form.low_stock_threshold} onChange={handleChange} min="0" className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={inputStyle} />
+          <label className={labelClass}>Low Stock Threshold</label>
+          <input type="number" name="low_stock_threshold" value={form.low_stock_threshold} onChange={handleChange} min="0" className={fieldClass} />
           <FieldError name="low_stock_threshold" />
         </div>
       </div>
 
       {/* Image upload */}
       <div>
-        <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Image</label>
+        <label className={labelClass}>Image</label>
         <div className="flex items-center gap-4">
           {imagePreview ? (
-            <div className="relative w-20 h-20 rounded-lg overflow-hidden" style={{ border: '1px solid var(--color-border-subtle)' }}>
+            <div className="relative h-20 w-20 overflow-hidden rounded-lg bg-muted/45">
               <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
               <button
                 type="button"
                 onClick={() => { setImageFile(null); setImagePreview(null); }}
-                className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-black/60"
+                className="absolute right-0.5 top-0.5 rounded-full bg-foreground/70 p-0.5"
               >
                 <X size={12} className="text-white" />
               </button>
             </div>
           ) : null}
           <label
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm cursor-pointer transition-colors"
-            style={{ border: '1px solid var(--color-border-subtle)', color: 'var(--color-text-secondary)' }}
+            className="flex cursor-pointer items-center gap-2 rounded-lg bg-muted/45 px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted/60"
           >
             <Upload size={16} />
             {imagePreview ? 'Change' : 'Upload Image'}
@@ -206,16 +202,14 @@ export default function MenuForm({ item = null, categories, onSave, onCancel }) 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-          style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary-dark)' }}
+          className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
           {isSubmitting ? 'Saving...' : isEdit ? 'Update Item' : 'Create Item'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
-          style={{ border: '1px solid var(--color-border-subtle)', color: 'var(--color-text-secondary)' }}
+          className="rounded-lg bg-muted/55 px-6 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/70"
         >
           Cancel
         </button>

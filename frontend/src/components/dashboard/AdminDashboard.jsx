@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+// eslint-disable-next-line no-unused-vars -- used as <motion.div> JSX element
 import { motion } from 'framer-motion';
 import {
   AlertCircle, ArrowUpRight, PlusCircle, BarChart2,
@@ -10,12 +11,36 @@ import { useAuth } from '@/context/AuthContext';
 import reportService from '../../services/reportService';
 import inventoryService from '../../services/inventoryService';
 import orderService from '../../services/orderService';
-import SalesChart from './SalesChart';
-import CategoryPieChart from './CategoryPieChart';
-import OrderTrendChart from './OrderTrendChart';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { DashboardPageSkeleton } from '@/components/skeletons/AdminSkeletons';
+
+const SalesChart = lazy(() => import('./SalesChart'));
+const CategoryPieChart = lazy(() => import('./CategoryPieChart'));
+const OrderTrendChart = lazy(() => import('./OrderTrendChart'));
+
+function ChartLoadingFallback({ className = 'py-12' }) {
+  return (
+    <div className={`space-y-3 ${className}`}>
+      <div className="grid h-44 grid-cols-10 items-end gap-2">
+        {Array.from({ length: 10 }).map((_, index) => (
+          <Skeleton
+            key={index}
+            className="w-full rounded-md"
+            style={{ height: `${36 + ((index % 5) * 11)}%` }}
+          />
+        ))}
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <Skeleton key={index} className="h-3 w-10" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const SUMMARY_CARDS = [
   {
@@ -24,7 +49,7 @@ const SUMMARY_CARDS = [
     hint: 'vs last period',
     format: 'currency',
     Icon: DollarSign,
-    iconBg: 'bg-blue-50 dark:bg-blue-900/20',
+    iconBg: 'bg-blue-500/5 dark:bg-blue-500/10',
     iconColor: 'text-blue-600 dark:text-blue-400',
   },
   {
@@ -33,7 +58,7 @@ const SUMMARY_CARDS = [
     hint: 'orders recorded',
     format: 'number',
     Icon: ShoppingCart,
-    iconBg: 'bg-emerald-50 dark:bg-emerald-900/20',
+    iconBg: 'bg-emerald-500/5 dark:bg-emerald-500/10',
     iconColor: 'text-emerald-600 dark:text-emerald-400',
   },
   {
@@ -42,7 +67,7 @@ const SUMMARY_CARDS = [
     hint: 'per transaction',
     format: 'currency',
     Icon: TrendingUp,
-    iconBg: 'bg-violet-50 dark:bg-violet-900/20',
+    iconBg: 'bg-violet-500/5 dark:bg-violet-500/10',
     iconColor: 'text-violet-600 dark:text-violet-400',
   },
   {
@@ -51,7 +76,7 @@ const SUMMARY_CARDS = [
     hint: 'live today',
     format: 'currency',
     Icon: Zap,
-    iconBg: 'bg-amber-50 dark:bg-amber-900/20',
+    iconBg: 'bg-amber-500/5 dark:bg-amber-500/10',
     iconColor: 'text-amber-600 dark:text-amber-400',
     isLive: true,
   },
@@ -61,7 +86,7 @@ const SUMMARY_CARDS = [
     hint: 'awaiting action',
     format: 'number',
     Icon: Clock,
-    iconBg: 'bg-orange-50 dark:bg-orange-900/20',
+    iconBg: 'bg-orange-500/5 dark:bg-orange-500/10',
     iconColor: 'text-orange-600 dark:text-orange-400',
     isStatus: true,
   },
@@ -71,7 +96,7 @@ const SUMMARY_CARDS = [
     hint: 'needs restock',
     format: 'number',
     Icon: Package,
-    iconBg: 'bg-red-50 dark:bg-red-900/20',
+    iconBg: 'bg-red-500/5 dark:bg-red-500/10',
     iconColor: 'text-red-600 dark:text-red-400',
     isWarning: true,
   },
@@ -102,7 +127,7 @@ function SummaryCard({ index = 0, title, hint, value, format, Icon, iconBg, icon
         damping: 24,
       }}
     >
-      <Card className="h-full rounded-2xl bg-card shadow-sm transition-colors hover:bg-card/95">
+      <Card className="h-full rounded-2xl bg-card shadow-sm transition-all duration-300 ease-out hover:bg-card/95 hover:-translate-y-1 hover:shadow-md">
         <CardContent className="flex min-h-[116px] flex-col p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -196,6 +221,10 @@ export default function AdminDashboard() {
     }
     fetchData();
   }, []);
+
+  if (loading) {
+    return <DashboardPageSkeleton />;
+  }
 
   if (error) {
     return (
@@ -294,7 +323,9 @@ export default function AdminDashboard() {
             <CardDescription>Revenue per day over the reporting period</CardDescription>
           </CardHeader>
           <CardContent className="pb-4 pt-1">
-            <SalesChart data={trends} />
+            <Suspense fallback={<ChartLoadingFallback />}>
+              <SalesChart data={trends} />
+            </Suspense>
           </CardContent>
         </Card>
         <Card className="rounded-2xl shadow-sm">
@@ -303,7 +334,9 @@ export default function AdminDashboard() {
             <CardDescription>Revenue breakdown across menu categories</CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center pb-3 pt-1">
-            <CategoryPieChart data={categories} />
+            <Suspense fallback={<ChartLoadingFallback className="py-8" />}>
+              <CategoryPieChart data={categories} />
+            </Suspense>
           </CardContent>
           <CardFooter className="flex-wrap gap-x-4 gap-y-1 pb-4 pt-3 text-xs text-muted-foreground">
             {categories.slice(0, 4).map((c) => (
@@ -317,7 +350,9 @@ export default function AdminDashboard() {
             <CardDescription>Order volume and revenue over time</CardDescription>
           </CardHeader>
           <CardContent className="pb-4 pt-1">
-            <OrderTrendChart data={trends} />
+            <Suspense fallback={<ChartLoadingFallback />}>
+              <OrderTrendChart data={trends} />
+            </Suspense>
           </CardContent>
         </Card>
       </motion.div>

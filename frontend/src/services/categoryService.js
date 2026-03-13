@@ -3,7 +3,10 @@ import api from './api';
 const categoryService = {
   async getAll() {
     const { data } = await api.get('/categories');
-    return data.data.categories;
+    const payload = data?.data;
+    if (Array.isArray(payload?.categories)) return payload.categories;
+    if (Array.isArray(payload)) return payload;
+    return [];
   },
 
   async getById(id) {

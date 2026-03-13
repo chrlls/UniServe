@@ -1,23 +1,30 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
-import Login from './components/auth/Login';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import MainLayout from './components/common/MainLayout';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import LoadingSpinner from './components/common/LoadingSpinner';
+import { Toaster } from 'sonner';
 
-import AdminDashboard from './components/dashboard/AdminDashboard';
-import ReportsPage from './components/dashboard/ReportsPage';
-import MenuManagementPage from './components/menu/MenuManagementPage';
-import MenuList from './components/menu/MenuList';
-import POSInterface from './components/orders/POSInterface';
-import OrderQueue from './components/orders/OrderQueue';
-import OrderReceipt from './components/orders/OrderReceipt';
-import CustomerOrders from './components/orders/CustomerOrders';
-import InventoryPage from './components/inventory/InventoryPage';
-import UserManagement from './components/users/UserManagement';
-import SettingsPage from './components/settings/SettingsPage';
+const Login = lazy(() => import('./components/auth/Login'));
+const MainLayout = lazy(() => import('./components/common/MainLayout'));
+const AdminDashboard = lazy(() => import('./components/dashboard/AdminDashboard'));
+const ReportsPage = lazy(() => import('./components/dashboard/ReportsPage'));
+const MenuManagementPage = lazy(() => import('./components/menu/MenuManagementPage'));
+const MenuList = lazy(() => import('./components/menu/MenuList'));
+const POSInterface = lazy(() => import('./components/orders/POSInterface'));
+const OrderQueue = lazy(() => import('./components/orders/OrderQueue'));
+const OrderReceipt = lazy(() => import('./components/orders/OrderReceipt'));
+const CustomerOrders = lazy(() => import('./components/orders/CustomerOrders'));
+const InventoryPage = lazy(() => import('./components/inventory/InventoryPage'));
+const UserManagement = lazy(() => import('./components/users/UserManagement'));
+const SettingsPage = lazy(() => import('./components/settings/SettingsPage'));
+
+function RouteFallback() {
+  return <LoadingSpinner fullScreen message="Loading page..." />;
+}
 
 export default function App() {
   return (
@@ -26,6 +33,7 @@ export default function App() {
         <BrowserRouter>
           <AuthProvider>
           <CartProvider>
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               {/* Public route */}
               <Route path="/login" element={<Login />} />
@@ -64,6 +72,8 @@ export default function App() {
               {/* Default catch-all */}
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
+            </Suspense>
+            <Toaster richColors position="top-right" closeButton />
           </CartProvider>
         </AuthProvider>
       </BrowserRouter>

@@ -3,7 +3,10 @@ import api from './api';
 const menuService = {
   async getAll(params = {}) {
     const { data } = await api.get('/menu-items', { params });
-    return data.data.menu_items;
+    const payload = data?.data;
+    if (Array.isArray(payload?.menu_items)) return payload.menu_items;
+    if (Array.isArray(payload)) return payload;
+    return [];
   },
 
   async getById(id) {

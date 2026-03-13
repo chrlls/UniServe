@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+// eslint-disable-next-line no-unused-vars -- used as <motion.div> JSX element
+import { motion } from 'framer-motion';
 import {
   Search, AlertCircle, UtensilsCrossed,
   ShoppingBag, Plus, Minus, X, Utensils,
@@ -9,14 +11,12 @@ import categoryService from '../../services/categoryService';
 import orderService from '../../services/orderService';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import LoadingSpinner from '../common/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Sheet, SheetContent, SheetDescription,
   SheetFooter, SheetHeader, SheetTitle, SheetTrigger,
@@ -100,15 +100,20 @@ export default function MenuList() {
       : null;
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+      className="min-h-[calc(100vh-3.5rem)] flex flex-col"
+    >
       {/* Sticky header: search + cart trigger + category tabs */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4 space-y-3">
+      <div className="sticky top-0 z-20 space-y-3 bg-background/90 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search menu items..."
-              className="pl-9"
+              className="rounded-lg border-0 bg-muted/45 pl-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -117,7 +122,7 @@ export default function MenuList() {
           {isCustomer && (
             <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" className="relative shrink-0">
+                <Button variant="secondary" className="relative shrink-0 rounded-lg bg-muted/45 hover:bg-muted/60">
                   <ShoppingBag className="h-4 w-4 mr-2" />
                   Cart
                   {totalItems > 0 && (
@@ -128,7 +133,7 @@ export default function MenuList() {
                 </Button>
               </SheetTrigger>
 
-              <SheetContent className="w-full sm:max-w-lg flex flex-col">
+              <SheetContent className="flex w-full flex-col border-0 sm:max-w-lg">
                 <SheetHeader>
                   <SheetTitle>Your Order</SheetTitle>
                   <SheetDescription>
@@ -164,12 +169,12 @@ export default function MenuList() {
                                 </p>
                               </div>
                               <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-7 w-7"
+                                <Button variant="secondary" size="icon" className="h-7 w-7 rounded-lg bg-muted/45 hover:bg-muted/65"
                                   onClick={() => handleDecrement(item)}>
                                   <Minus className="h-3 w-3" />
                                 </Button>
                                 <span className="w-7 text-center text-sm font-medium">{item.quantity}</span>
-                                <Button variant="outline" size="icon" className="h-7 w-7"
+                                <Button variant="secondary" size="icon" className="h-7 w-7 rounded-lg bg-muted/45 hover:bg-muted/65"
                                   onClick={() => updateQuantity(item.id, 1)}>
                                   <Plus className="h-3 w-3" />
                                 </Button>
@@ -184,12 +189,11 @@ export default function MenuList() {
                       </div>
                     </ScrollArea>
 
-                    <div className="pt-4 border-t space-y-3">
+                    <div className="space-y-3 rounded-xl bg-muted/35 p-3">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Subtotal</span>
                         <span>₱{totalAmount.toFixed(2)}</span>
                       </div>
-                      <Separator />
                       <div className="flex justify-between font-bold text-lg">
                         <span>Total</span>
                         <span className="text-primary">₱{totalAmount.toFixed(2)}</span>
@@ -197,11 +201,11 @@ export default function MenuList() {
 
                       {/* Payment method */}
                       <div className="flex gap-2">
-                        <Button size="sm" variant={paymentMethod === 'cash' ? 'default' : 'outline'}
+                        <Button size="sm" variant={paymentMethod === 'cash' ? 'default' : 'secondary'}
                           className="flex-1" onClick={() => setPaymentMethod('cash')}>
                           Cash
                         </Button>
-                        <Button size="sm" variant={paymentMethod === 'gcash' ? 'default' : 'outline'}
+                        <Button size="sm" variant={paymentMethod === 'gcash' ? 'default' : 'secondary'}
                           className="flex-1" onClick={() => setPaymentMethod('gcash')}>
                           GCash
                         </Button>
@@ -224,7 +228,7 @@ export default function MenuList() {
         <ScrollArea className="w-full">
           <Tabs value={selectedCategory === null ? '__all__' : String(selectedCategory)}
             onValueChange={(v) => setSelectedCategory(v === '__all__' ? null : Number(v))}>
-            <TabsList className="h-9 w-max">
+            <TabsList className="h-9 w-max border-0 bg-muted/45">
               <TabsTrigger value="__all__" className="text-sm px-4">All</TabsTrigger>
               {categories.map((cat) => (
                 <TabsTrigger key={cat.id} value={String(cat.id)} className="text-sm px-4">
@@ -239,7 +243,19 @@ export default function MenuList() {
       {/* Content area */}
       <div className="flex-1 p-4">
         {loading ? (
-          <LoadingSpinner message="Loading menu..." />
+          <div className="space-y-4">
+            <div className="h-6 w-44 animate-pulse rounded-lg bg-muted/55" />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div key={index} className="space-y-3 rounded-2xl bg-card p-3 shadow-sm">
+                  <div className="aspect-[4/3] animate-pulse rounded-xl bg-muted/50" />
+                  <div className="h-4 w-2/3 animate-pulse rounded-md bg-muted/55" />
+                  <div className="h-3 w-full animate-pulse rounded-md bg-muted/45" />
+                  <div className="h-8 w-full animate-pulse rounded-lg bg-muted/50" />
+                </div>
+              ))}
+            </div>
+          </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <AlertCircle size={48} className="text-destructive mb-4" />
@@ -262,7 +278,7 @@ export default function MenuList() {
               const cartItem = cartItems.find((ci) => ci.id === item.id);
 
               return (
-                <Card key={item.id} className="overflow-hidden group">
+                <Card key={item.id} className="group overflow-hidden rounded-2xl border-0 shadow-sm transition-shadow hover:shadow-md">
                   <div className="relative aspect-[4/3] bg-muted">
                     {url ? (
                       <img
@@ -276,8 +292,8 @@ export default function MenuList() {
                       </div>
                     )}
                     {isOutOfStock && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <Badge variant="destructive">Out of Stock</Badge>
+                      <div className="absolute inset-0 flex items-center justify-center bg-background/75 backdrop-blur-[1px]">
+                        <Badge className="bg-destructive/85 text-destructive-foreground">Out of Stock</Badge>
                       </div>
                     )}
                     {item.category && (
@@ -312,12 +328,12 @@ export default function MenuList() {
                     {isCustomer && !isOutOfStock && (
                       cartItem ? (
                         <div className="flex items-center justify-between">
-                          <Button variant="outline" size="icon" className="h-8 w-8"
+                          <Button variant="secondary" size="icon" className="h-8 w-8 rounded-lg bg-muted/45 hover:bg-muted/65"
                             onClick={() => handleDecrement(cartItem)}>
                             <Minus className="h-3 w-3" />
                           </Button>
                           <span className="w-10 text-center font-semibold">{cartItem.quantity}</span>
-                          <Button variant="outline" size="icon" className="h-8 w-8"
+                          <Button variant="secondary" size="icon" className="h-8 w-8 rounded-lg bg-muted/45 hover:bg-muted/65"
                             onClick={() => updateQuantity(item.id, 1)}>
                             <Plus className="h-3 w-3" />
                           </Button>
@@ -335,6 +351,6 @@ export default function MenuList() {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

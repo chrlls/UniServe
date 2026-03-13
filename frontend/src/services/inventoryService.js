@@ -3,9 +3,22 @@ import api from './api';
 const inventoryService = {
   async getAll(params = {}) {
     const { data } = await api.get('/inventory', { params });
+    const payload = data?.data ?? {};
+    const pagination = payload.inventory_pagination ?? null;
+
     return {
-      inventoryItems: data.data.inventory_items,
-      recentLogs: data.data.recent_logs,
+      inventoryItems: payload.inventory_items ?? [],
+      recentLogs: payload.recent_logs ?? [],
+      pagination: pagination
+        ? {
+            currentPage: pagination.current_page,
+            lastPage: pagination.last_page,
+            perPage: pagination.per_page,
+            total: pagination.total,
+            from: pagination.from,
+            to: pagination.to,
+          }
+        : null,
     };
   },
 

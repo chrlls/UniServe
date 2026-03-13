@@ -5,11 +5,11 @@ import menuService from '../../services/menuService';
 import categoryService from '../../services/categoryService';
 import orderService from '../../services/orderService';
 import MenuItemCard from '../menu/MenuItemCard';
-import LoadingSpinner from '../common/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { POSPageSkeleton } from '@/components/skeletons/AdminSkeletons';
 
 export default function POSInterface() {
   const { cartItems, addToCart, removeFromCart, updateQuantity, clearCart, totalAmount, totalItems } = useCart();
@@ -86,6 +86,10 @@ export default function POSInterface() {
     );
   }
 
+  if (loading) {
+    return <POSPageSkeleton />;
+  }
+
   return (
     <div className="flex h-[calc(100vh-6rem)] gap-4">
       {/* Left: Menu Browser */}
@@ -131,9 +135,7 @@ export default function POSInterface() {
 
         {/* Items Grid */}
         <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <LoadingSpinner message="Loading menu..." />
-          ) : error ? (
+          {error ? (
             <div className="flex flex-col items-center py-8">
               <AlertCircle size={32} className="text-destructive" />
               <p className="text-sm mt-2 text-destructive">{error}</p>

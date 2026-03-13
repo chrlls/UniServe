@@ -21,13 +21,82 @@ class InventoryController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = MenuItem::query()->with('category')->latest();
+        $query = MenuItem::query()->with('category');
+
+        $search = trim((string) $request->query('search', ''));
+        $categoryId = $request->integer('category_id');
+        $status = (string) $request->query('status', 'all');
+        $sort = (string) $request->query('sort', 'updated-desc');
+        $perPage = (int) $request->query('per_page', 10);
+        $perPage = max(5, min($perPage, 50));
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search): void {
+                $builder
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('category', function ($categoryQuery) use ($search): void {
+                        $categoryQuery->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($categoryId > 0) {
+            $query->where('category_id', $categoryId);
+        }
+
+        switch ($status) {
+            case 'low-stock':
+                $query->whereColumn('stock_quantity', '<=', 'low_stock_threshold');
+                break;
+            case 'out-of-stock':
+                $query->where('stock_quantity', 0);
+                break;
+            case 'healthy':
+                $query->whereColumn('stock_quantity', '>', 'low_stock_threshold');
+                break;
+        }
 
         if ($request->boolean('low_stock_only')) {
             $query->whereColumn('stock_quantity', '<=', 'low_stock_threshold');
         }
 
-        $menuItems = $query->get();
+        switch ($sort) {
+            case 'name-asc':
+                $query->orderBy('name');
+                break;
+            case 'name-desc':
+                $query->orderByDesc('name');
+                break;
+            case 'stock-asc':
+                $query->orderBy('stock_quantity')->orderBy('name');
+                break;
+            case 'stock-desc':
+                $query->orderByDesc('stock_quantity')->orderBy('name');
+                break;
+            case 'category-asc':
+                $query
+                    ->leftJoin('categories', 'categories.id', '=', 'menu_items.category_id')
+                    ->select('menu_items.*')
+                    ->orderBy('categories.name')
+                    ->orderBy('menu_items.name');
+                break;
+            case 'updated-asc':
+                $query->oldest('updated_at');
+                break;
+            case 'low-stock-first':
+                $query
+                    ->orderByRaw('CASE WHEN stock_quantity <= low_stock_threshold THEN 0 ELSE 1 END')
+                    ->orderBy('stock_quantity')
+                    ->orderBy('name');
+                break;
+            case 'updated-desc':
+            default:
+                $query->latest('updated_at');
+                break;
+        }
+
+        $menuItems = $query->paginate($perPage)->appends($request->query());
         $recentLogs = InventoryLog::query()
             ->with(['menuItem.category', 'changedBy'])
             ->latest()
@@ -35,7 +104,15 @@ class InventoryController extends Controller
             ->get();
 
         return $this->successResponse([
-            'inventory_items' => MenuItemResource::collection($menuItems)->resolve(),
+            'inventory_items' => MenuItemResource::collection($menuItems->getCollection())->resolve(),
+            'inventory_pagination' => [
+                'current_page' => $menuItems->currentPage(),
+                'last_page' => $menuItems->lastPage(),
+                'per_page' => $menuItems->perPage(),
+                'total' => $menuItems->total(),
+                'from' => $menuItems->firstItem(),
+                'to' => $menuItems->lastItem(),
+            ],
             'recent_logs' => InventoryLogResource::collection($recentLogs)->resolve(),
         ]);
     }

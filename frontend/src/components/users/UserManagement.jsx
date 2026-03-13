@@ -302,7 +302,7 @@ export default function UserManagement() {
               <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" loading={submitting}>
                 {submitting ? 'Saving...' : editingUser ? 'Update User' : 'Create User'}
               </Button>
             </DialogFooter>
