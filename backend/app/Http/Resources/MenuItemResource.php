@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class MenuItemResource extends JsonResource
 {
@@ -19,6 +20,7 @@ class MenuItemResource extends JsonResource
             'price' => (float) $this->price,
             'is_available' => (bool) $this->is_available,
             'image_path' => $this->image_path,
+            'image_url' => $this->image_path ? url(Storage::disk('public')->url($this->image_path)) : null,
             'stock_quantity' => $this->stock_quantity,
             'low_stock_threshold' => $this->low_stock_threshold,
             'is_low_stock' => $this->stock_quantity <= $this->low_stock_threshold,

@@ -4,6 +4,7 @@ import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import canteenImage from '@/assets/Images/blue-tray.png';
+import authBgImage from '@/assets/Images/max-frajer-VZFHWCaVBqw-unsplash.jpg';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,9 +90,17 @@ export default function Login() {
 
   return (
     <LayoutGroup>
-      <div className="min-h-screen w-full flex items-center justify-center p-4 md:p-6 lg:p-8 bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
+      <div className="relative min-h-screen w-full flex items-center justify-center p-4 md:p-6 lg:p-8 overflow-hidden">
+        <img
+          src={authBgImage}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover brightness-[0.9] saturate-[1.05]"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.46)_0%,rgba(30,64,175,0.24)_42%,rgba(248,250,252,0.36)_100%)] backdrop-blur-[5px]" />
+
         <motion.div
-          className="w-full max-w-[1000px] bg-background rounded-2xl md:rounded-[2.5rem] shadow-[0_4px_6px_rgba(0,0,0,0.03),0_24px_64px_rgba(0,0,0,0.13)] overflow-hidden"
+          className="relative z-10 w-full max-w-[1000px] bg-background rounded-2xl md:rounded-[2.5rem] shadow-[0_4px_6px_rgba(0,0,0,0.03),0_24px_64px_rgba(0,0,0,0.13)] overflow-hidden"
           layout
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
@@ -358,9 +367,9 @@ export default function Login() {
                         transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] 
                         hover:-translate-y-[0.5px] hover:shadow-[0_8px_22px_rgba(0,22,140,0.34)] active:translate-y-0 
                         active:scale-[0.997] disabled:opacity-80 disabled:cursor-not-allowed [&>*]:relative [&>*]:z-10 before:content-[''] 
-                        before:absolute before:top-0 before:left-[-100%] before:h-full before:w-full 
+                        before:absolute before:top-0 before:left-[-80%] before:h-full before:w-full 
                         before:bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.16),transparent)] before:transition-[left] 
-                        before:duration-[700ms] before:ease-in-out hover:before:left-[100%]"
+                        before:duration-[450ms] before:ease-out hover:before:left-[100%]"
                         >
                         {isSubmitting
                           ? mode === 'login'

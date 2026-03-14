@@ -63,36 +63,38 @@ class InventoryController extends Controller
 
         switch ($sort) {
             case 'name-asc':
-                $query->orderBy('name');
+                $query->orderBy('name')->orderBy('menu_items.id');
                 break;
             case 'name-desc':
-                $query->orderByDesc('name');
+                $query->orderByDesc('name')->orderByDesc('menu_items.id');
                 break;
             case 'stock-asc':
-                $query->orderBy('stock_quantity')->orderBy('name');
+                $query->orderBy('stock_quantity')->orderBy('name')->orderBy('menu_items.id');
                 break;
             case 'stock-desc':
-                $query->orderByDesc('stock_quantity')->orderBy('name');
+                $query->orderByDesc('stock_quantity')->orderBy('name')->orderByDesc('menu_items.id');
                 break;
             case 'category-asc':
                 $query
                     ->leftJoin('categories', 'categories.id', '=', 'menu_items.category_id')
                     ->select('menu_items.*')
                     ->orderBy('categories.name')
-                    ->orderBy('menu_items.name');
+                    ->orderBy('menu_items.name')
+                    ->orderBy('menu_items.id');
                 break;
             case 'updated-asc':
-                $query->oldest('updated_at');
+                $query->oldest('updated_at')->orderBy('menu_items.id');
                 break;
             case 'low-stock-first':
                 $query
                     ->orderByRaw('CASE WHEN stock_quantity <= low_stock_threshold THEN 0 ELSE 1 END')
                     ->orderBy('stock_quantity')
-                    ->orderBy('name');
+                    ->orderBy('name')
+                    ->orderBy('menu_items.id');
                 break;
             case 'updated-desc':
             default:
-                $query->latest('updated_at');
+                $query->latest('updated_at')->orderByDesc('menu_items.id');
                 break;
         }
 

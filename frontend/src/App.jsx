@@ -7,6 +7,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import { Toaster } from 'sonner';
+import { GoeyToaster } from '@/components/ui/goey-toaster';
 
 const Login = lazy(() => import('./components/auth/Login'));
 const MainLayout = lazy(() => import('./components/common/MainLayout'));
@@ -74,6 +75,7 @@ export default function App() {
             </Routes>
             </Suspense>
             <Toaster richColors position="top-right" closeButton />
+            <GoeyToaster position="bottom-right" />
           </CartProvider>
         </AuthProvider>
       </BrowserRouter>
