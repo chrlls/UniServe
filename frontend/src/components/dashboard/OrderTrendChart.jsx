@@ -1,23 +1,30 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { useAccountPreferences } from '@/lib/preferences';
 
 const chartConfig = {
   order_count: { label: 'Orders', color: 'var(--chart-1)' },
 };
 
 export default function OrderTrendChart({ data }) {
+  const { formatDate, formatNumber } = useAccountPreferences();
+
   if (!data || data.length === 0) {
-    return <p className="text-sm text-center py-8 text-muted-foreground">No data available</p>;
+    return (
+      <p className="py-8 text-center text-sm text-muted-foreground">
+        No data available
+      </p>
+    );
   }
 
-  const formatted = data.map((d) => ({
-    ...d,
-    shortDate: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+  const formatted = data.map((item) => ({
+    ...item,
+    shortDate: formatDate(item.date, { month: 'short', day: 'numeric' }),
   }));
 
   return (
     <div>
-      <ChartContainer config={chartConfig} className="h-[200px] w-full">
+      <ChartContainer config={chartConfig} className="h-[240px] w-full">
         <LineChart data={formatted}>
           <CartesianGrid vertical={false} strokeDasharray="3 3" />
           <XAxis
@@ -32,7 +39,8 @@ export default function OrderTrendChart({ data }) {
             axisLine={false}
             tick={{ fontSize: 11 }}
             allowDecimals={false}
-            width={28}
+            width={36}
+            tickFormatter={(value) => formatNumber(value)}
           />
           <ChartTooltip
             cursor={false}
@@ -45,7 +53,7 @@ export default function OrderTrendChart({ data }) {
                   return (
                     <div className="flex items-center gap-1">
                       <span className="font-mono font-medium tabular-nums text-foreground">
-                        {orderCount.toLocaleString()}
+                        {formatNumber(orderCount)}
                       </span>
                       <span className="text-muted-foreground">{label}</span>
                     </div>
@@ -54,7 +62,6 @@ export default function OrderTrendChart({ data }) {
               />
             }
           />
-          {/* Spec: line chart shows order volume only — revenue is already on the bar chart */}
           <Line
             type="monotone"
             dataKey="order_count"

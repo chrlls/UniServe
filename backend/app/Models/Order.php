@@ -3,18 +3,22 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
     use HasFactory;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_PREPARING = 'preparing';
+
     public const STATUS_READY = 'ready';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
@@ -61,4 +65,3 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 }
-

@@ -44,4 +44,3 @@ class UserSeeder extends Seeder
         User::factory()->customer()->count(25)->create();
     }
 }
-

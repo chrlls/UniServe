@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+// eslint-disable-next-line no-unused-vars -- used as <motion.div> JSX element
+import { motion } from 'framer-motion';
 import { AlertCircle, PackagePlus, Search, ListFilter, FilterX } from 'lucide-react';
 import inventoryService from '../../services/inventoryService';
 import categoryService from '../../services/categoryService';
@@ -12,12 +14,27 @@ import { AppModal, AppModalBody, AppModalFooter } from '@/components/ui/app-moda
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
+import { goeyToast } from '@/components/ui/goey-toast';
+import { useAccountPreferences } from '@/lib/preferences';
 import { InventoryPageSkeleton } from '@/components/skeletons/AdminSkeletons';
 
 const ITEMS_PER_PAGE = 10;
+const KPI_CARD_CLASS = 'rounded-2xl border-0 bg-card shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:bg-card/95 hover:shadow-md';
+
+function getKpiCardMotion(index = 0) {
+  return {
+    initial: { opacity: 0, y: 14 },
+    animate: { opacity: 1, y: 0 },
+    transition: {
+      duration: 0.28,
+      delay: 0.06 + (index * 0.045),
+      ease: [0.22, 1, 0.36, 1],
+    },
+  };
+}
 
 export default function InventoryPage() {
+  const { formatDateTime } = useAccountPreferences();
   const [categories, setCategories] = useState([]);
   const [inventoryItems, setInventoryItems] = useState([]);
   const [recentLogs, setRecentLogs] = useState([]);
@@ -110,7 +127,7 @@ export default function InventoryPage() {
       if (showSkeleton) {
         setError(err.message);
       } else {
-        toast.error(err.message || 'Unable to refresh inventory after update.');
+        goeyToast.error(err.message || 'Unable to refresh inventory after update.');
       }
     } finally {
       if (showSkeleton) {
@@ -135,7 +152,7 @@ export default function InventoryPage() {
   async function handleUpdateStock(menuItemId, payload) {
     await inventoryService.updateStock(menuItemId, payload);
     await fetchData({ silent: true });
-    toast.success('Stock updated successfully.');
+    goeyToast.success('Stock updated successfully.');
   }
 
   const lowStockItems = inventoryItems.filter((i) => i.is_low_stock);
@@ -208,11 +225,11 @@ export default function InventoryPage() {
       setShowBulkRestock(false);
       setBulkItemErrors({});
       await fetchData({ silent: true });
-      toast.success(`Restocked ${validItems.length} item${validItems.length === 1 ? '' : 's'} successfully.`);
+      goeyToast.success(`Restocked ${validItems.length} item${validItems.length === 1 ? '' : 's'} successfully.`);
     } catch (err) {
       const message = err.message || 'Bulk restock failed. Please try again.';
       setBulkError(message);
-      toast.error(message);
+      goeyToast.error(message);
     } finally {
       setBulkSubmitting(false);
     }
@@ -242,6 +259,12 @@ export default function InventoryPage() {
   const healthyStockCount = inventoryItems.length - lowStockItems.length;
   const selectedBulkItems = bulkItems.filter((item) => item.quantity > 0);
   const selectedBulkTotalQuantity = selectedBulkItems.reduce((sum, item) => sum + item.quantity, 0);
+  const kpiCards = [
+    { label: 'Total Items', value: pagination.total, valueClassName: '' },
+    { label: 'Low Stock', value: lowStockItems.length, valueClassName: 'text-destructive' },
+    { label: 'Healthy Stock', value: healthyStockCount, valueClassName: 'text-emerald-600' },
+    { label: 'Out of Stock', value: outOfStockCount, valueClassName: 'text-destructive' },
+  ];
 
   return (
     <div className="space-y-5">
@@ -269,7 +292,20 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <Card>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {kpiCards.map((card, index) => (
+          <motion.div key={card.label} {...getKpiCardMotion(index)}>
+            <Card className={KPI_CARD_CLASS}>
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">{card.label}</p>
+                <p className={`mt-1 text-2xl font-semibold ${card.valueClassName}`}>{card.value}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      <Card className="rounded-2xl border-0 bg-card shadow-sm">
         <CardContent className="p-4">
           <div className="grid gap-3 lg:grid-cols-4">
             <div className="relative lg:col-span-2">
@@ -280,12 +316,12 @@ export default function InventoryPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search item or category..."
-                className="pl-9 border-slate-300 focus-visible:ring-blue-400/25 focus-visible:border-blue-400"
+                className="pl-9"
               />
             </div>
 
             <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-              <SelectTrigger aria-label="Filter by category" className="border-slate-300 focus:ring-blue-400/25">
+              <SelectTrigger aria-label="Filter by category">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -299,7 +335,7 @@ export default function InventoryPage() {
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger aria-label="Filter by stock status" className="border-slate-300 focus:ring-blue-400/25">
+              <SelectTrigger aria-label="Filter by stock status">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -316,7 +352,7 @@ export default function InventoryPage() {
               <ListFilter size={14} className="text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Sort by</span>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger aria-label="Sort inventory" className="h-8 w-[180px] border-slate-300 focus:ring-blue-400/25">
+                <SelectTrigger aria-label="Sort inventory" className="h-8 w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -347,33 +383,6 @@ export default function InventoryPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Total Items</p>
-            <p className="mt-1 text-2xl font-semibold">{pagination.total}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Low Stock</p>
-            <p className="mt-1 text-2xl font-semibold text-destructive">{lowStockItems.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Healthy Stock</p>
-            <p className="mt-1 text-2xl font-semibold text-emerald-600">{healthyStockCount}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Out of Stock</p>
-            <p className="mt-1 text-2xl font-semibold text-destructive">{outOfStockCount}</p>
-          </CardContent>
-        </Card>
-      </div>
-
       {bulkSummary && (
         <Card role="status" aria-live="polite">
           <CardContent className="p-4 flex flex-wrap items-start justify-between gap-2">
@@ -384,7 +393,7 @@ export default function InventoryPage() {
               </p>
             </div>
             <p className="text-xs text-muted-foreground">
-              {new Date(bulkSummary.at).toLocaleString()}
+              {formatDateTime(bulkSummary.at)}
             </p>
           </CardContent>
         </Card>
@@ -435,7 +444,7 @@ export default function InventoryPage() {
                     <p className={`font-mono text-xs ${log.quantity_change >= 0 ? 'text-success' : 'text-destructive'}`}>
                       {log.quantity_change >= 0 ? '+' : ''}{log.quantity_change}
                     </p>
-                    <p className="text-[11px] text-muted-foreground">{new Date(log.created_at).toLocaleString()}</p>
+                    <p className="text-[11px] text-muted-foreground">{formatDateTime(log.created_at)}</p>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">{log.reason || 'No reason provided.'}</p>
                 </div>
@@ -536,7 +545,7 @@ export default function InventoryPage() {
         </AppModalBody>
 
         <AppModalFooter>
-          <Button type="button" variant="outline" onClick={() => setShowBulkRestock(false)} disabled={bulkSubmitting}>
+          <Button type="button" variant="destructive" onClick={() => setShowBulkRestock(false)} disabled={bulkSubmitting}>
             Cancel
           </Button>
           <Button type="submit" form="bulk-restock-form" disabled={bulkSubmitting || selectedBulkItems.length === 0}>

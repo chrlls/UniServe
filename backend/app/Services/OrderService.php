@@ -8,15 +8,12 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
-    public function __construct(private readonly InventoryService $inventoryService)
-    {
-    }
+    public function __construct(private readonly InventoryService $inventoryService) {}
 
     public function createOrder(User $actor, array $validated): Order
     {
@@ -93,19 +90,47 @@ class OrderService
         });
     }
 
-    public function updateStatus(Order $order, string $status): Order
+    public function updateStatus(Order $order, string $status, ?User $actor = null): Order
     {
+        if ($order->status === $status) {
+            return $order->load(['items.menuItem.category', 'customer', 'cashier']);
+        }
+
         if (! $this->isValidTransition($order->status, $status)) {
             throw ValidationException::withMessages([
                 'status' => ['Invalid order status transition.'],
             ]);
         }
 
-        $order->update([
-            'status' => $status,
-        ]);
+        return DB::transaction(function () use ($order, $status, $actor): Order {
+            /** @var Order $lockedOrder */
+            $lockedOrder = Order::query()
+                ->with(['items.menuItem.category', 'customer', 'cashier'])
+                ->lockForUpdate()
+                ->findOrFail($order->id);
 
-        return $order->load(['items.menuItem.category', 'customer', 'cashier']);
+            $lockedOrder->update([
+                'status' => $status,
+            ]);
+
+            if ($status === Order::STATUS_CANCELLED) {
+                $lockedOrder->items->each(function (OrderItem $item) use ($lockedOrder, $actor): void {
+                    if (! $item->menuItem) {
+                        return;
+                    }
+
+                    $this->inventoryService->changeStock(
+                        $item->menuItem,
+                        (int) $item->quantity,
+                        InventoryLog::TYPE_RESTOCK,
+                        $actor,
+                        'Stock restored for cancelled order '.$lockedOrder->order_number,
+                    );
+                });
+            }
+
+            return $lockedOrder->fresh(['items.menuItem.category', 'customer', 'cashier']);
+        });
     }
 
     private function isValidTransition(string $currentStatus, string $nextStatus): bool

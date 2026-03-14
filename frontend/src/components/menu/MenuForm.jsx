@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Upload, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function MenuForm({ item = null, categories, onSave, onCancel }) {
   const isEdit = item !== null && item.id;
@@ -58,6 +69,14 @@ export default function MenuForm({ item = null, categories, onSave, onCancel }) 
     setFieldErrors((prev) => ({ ...prev, image: undefined }));
   }
 
+  function handleAvailabilityChange(checked) {
+    setForm((prev) => ({
+      ...prev,
+      is_available: checked === true,
+    }));
+    setFieldErrors((prev) => ({ ...prev, is_available: undefined }));
+  }
+
   function validate() {
     const errors = {};
     if (!form.category_id) errors.category_id = ['Category is required.'];
@@ -106,7 +125,7 @@ export default function MenuForm({ item = null, categories, onSave, onCancel }) 
     return <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{msgs[0]}</p>;
   }
 
-  const fieldClass = 'w-full rounded-lg bg-muted/45 px-3 py-2 text-sm outline-none ring-0 transition focus:bg-muted/60 focus:ring-2 focus:ring-primary/20';
+  const fieldClass = 'w-full rounded-xl bg-muted/78 text-foreground shadow-sm';
   const labelClass = 'mb-1 block text-sm font-medium text-muted-foreground';
 
   return (
@@ -120,24 +139,37 @@ export default function MenuForm({ item = null, categories, onSave, onCancel }) 
       {/* Category */}
       <div>
         <label className={labelClass}>Category</label>
-        <select name="category_id" value={form.category_id} onChange={handleChange} className={fieldClass}>
-          <option value="">Select category</option>
-          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <Select
+          value={form.category_id ? String(form.category_id) : ''}
+          onValueChange={(value) =>
+            handleChange({ target: { name: 'category_id', value } })
+          }
+        >
+          <SelectTrigger className={fieldClass}>
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={String(c.id)}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <FieldError name="category_id" />
       </div>
 
       {/* Name */}
       <div>
         <label className={labelClass}>Name</label>
-        <input type="text" name="name" value={form.name} onChange={handleChange} className={fieldClass} />
+        <Input type="text" name="name" value={form.name} onChange={handleChange} className={fieldClass} />
         <FieldError name="name" />
       </div>
 
       {/* Description */}
       <div>
         <label className={labelClass}>Description</label>
-        <textarea name="description" value={form.description} onChange={handleChange} rows={2} className={`${fieldClass} resize-none`} />
+        <Textarea name="description" value={form.description} onChange={handleChange} rows={2} className={`${fieldClass} resize-none`} />
         <FieldError name="description" />
       </div>
 
@@ -145,12 +177,16 @@ export default function MenuForm({ item = null, categories, onSave, onCancel }) 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Price</label>
-          <input type="number" name="price" value={form.price} onChange={handleChange} step="0.01" min="0.01" className={fieldClass} />
+          <Input type="number" name="price" value={form.price} onChange={handleChange} step="0.01" min="0.01" className={fieldClass} />
           <FieldError name="price" />
         </div>
         <div className="flex items-end pb-2">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" name="is_available" checked={form.is_available} onChange={handleChange} className="w-4 h-4 rounded accent-green-500" />
+          <label htmlFor="menu-item-available" className="flex items-center gap-2 cursor-pointer">
+            <Checkbox
+              id="menu-item-available"
+              checked={form.is_available}
+              onCheckedChange={handleAvailabilityChange}
+            />
             <span className="text-sm text-foreground">Available</span>
           </label>
         </div>
@@ -160,12 +196,12 @@ export default function MenuForm({ item = null, categories, onSave, onCancel }) 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Stock Quantity</label>
-          <input type="number" name="stock_quantity" value={form.stock_quantity} onChange={handleChange} min="0" className={fieldClass} />
+          <Input type="number" name="stock_quantity" value={form.stock_quantity} onChange={handleChange} min="0" className={fieldClass} />
           <FieldError name="stock_quantity" />
         </div>
         <div>
           <label className={labelClass}>Low Stock Threshold</label>
-          <input type="number" name="low_stock_threshold" value={form.low_stock_threshold} onChange={handleChange} min="0" className={fieldClass} />
+          <Input type="number" name="low_stock_threshold" value={form.low_stock_threshold} onChange={handleChange} min="0" className={fieldClass} />
           <FieldError name="low_stock_threshold" />
         </div>
       </div>
@@ -177,13 +213,15 @@ export default function MenuForm({ item = null, categories, onSave, onCancel }) 
           {imagePreview ? (
             <div className="relative h-20 w-20 overflow-hidden rounded-lg bg-muted/45">
               <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => { setImageFile(null); setImagePreview(null); }}
-                className="absolute right-0.5 top-0.5 rounded-full bg-foreground/70 p-0.5"
+                className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-foreground/70 p-0.5 text-white hover:bg-foreground/80 hover:text-white"
               >
                 <X size={12} className="text-white" />
-              </button>
+              </Button>
             </div>
           ) : null}
           <label
@@ -199,20 +237,21 @@ export default function MenuForm({ item = null, categories, onSave, onCancel }) 
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">
-        <button
+        <Button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+          className="flex-1 h-10 rounded-lg text-sm font-semibold"
         >
           {isSubmitting ? 'Saving...' : isEdit ? 'Update Item' : 'Create Item'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="destructive"
           onClick={onCancel}
-          className="rounded-lg bg-muted/55 px-6 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/70"
+          className="h-10 rounded-lg px-6 text-sm font-medium"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );

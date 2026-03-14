@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\InventoryController;
@@ -8,6 +7,7 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function (): void {
     Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
@@ -15,6 +15,8 @@ Route::prefix('auth')->group(function (): void {
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
+        Route::match(['put', 'post'], '/profile', [AuthController::class, 'updateProfile'])->name('auth.profile.update');
+        Route::put('/password', [AuthController::class, 'updatePassword'])->name('auth.password.update');
         Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
     });
 });
@@ -54,7 +56,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
-        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::match(['put', 'post'], '/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
 

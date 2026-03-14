@@ -6,7 +6,6 @@ import { CartProvider } from './context/CartContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingSpinner from './components/common/LoadingSpinner';
-import { Toaster } from 'sonner';
 import { GoeyToaster } from '@/components/ui/goey-toaster';
 
 const Login = lazy(() => import('./components/auth/Login'));
@@ -74,7 +73,6 @@ export default function App() {
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
             </Suspense>
-            <Toaster richColors position="top-right" closeButton />
             <GoeyToaster position="bottom-right" />
           </CartProvider>
         </AuthProvider>

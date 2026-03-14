@@ -15,8 +15,19 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     public const ROLE_ADMIN = 'admin';
+
     public const ROLE_CASHIER = 'cashier';
+
     public const ROLE_CUSTOMER = 'customer';
+
+    public const AVATAR_STYLES = [
+        'lorelei',
+        'lorelei-neutral',
+        'personas',
+        'fun-emoji',
+        'adventurer',
+        'bottts',
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -28,6 +39,8 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'avatar_style',
+        'avatar_seed',
     ];
 
     /**

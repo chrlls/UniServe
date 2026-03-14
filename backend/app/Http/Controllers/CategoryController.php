@@ -57,4 +57,3 @@ class CategoryController extends Controller
         return $this->successResponse(data: null, message: 'Category deleted successfully.');
     }
 }
-

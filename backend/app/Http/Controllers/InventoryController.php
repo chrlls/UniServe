@@ -15,9 +15,7 @@ use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
-    public function __construct(private readonly InventoryService $inventoryService)
-    {
-    }
+    public function __construct(private readonly InventoryService $inventoryService) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -158,4 +156,3 @@ class InventoryController extends Controller
         ], 'Inventory restocked successfully.');
     }
 }
-

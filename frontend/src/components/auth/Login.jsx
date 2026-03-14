@@ -1,69 +1,92 @@
-﻿import { useState } from 'react';
+﻿import { useState } from "react";
 // eslint-disable-next-line no-unused-vars -- used as <motion.div> JSX element
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import canteenImage from '@/assets/Images/blue-tray.png';
-import authBgImage from '@/assets/Images/max-frajer-VZFHWCaVBqw-unsplash.jpg';
-import { useAuth } from '../../context/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { useNavigate, Link } from "react-router-dom";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import canteenImage from "@/assets/Images/blue-tray.png";
+import authBgImage from "@/assets/Images/max-frajer-VZFHWCaVBqw-unsplash.jpg";
+import { useAuth } from "../../context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const roleRedirects = {
-  admin: '/admin/dashboard',
-  cashier: '/cashier/pos',
-  customer: '/menu',
+  admin: "/admin/dashboard",
+  cashier: "/cashier/pos",
+  customer: "/menu",
 };
 
+function isCredentialsError(err) {
+  const message = err?.message ?? "";
+  const emailError = Array.isArray(err?.errors?.email)
+    ? err.errors.email[0]
+    : "";
+
+  return (
+    message === "The provided credentials are incorrect." &&
+    emailError === "The provided credentials are incorrect."
+  );
+}
 
 export default function Login() {
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
-  const [mode, setMode]                 = useState('login');
-  const [form, setForm]                 = useState({ email: '', password: '', remember: false, name: '', password_confirmation: '' });
+  const [mode, setMode] = useState("login");
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    remember: false,
+    name: "",
+    password_confirmation: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError]               = useState('');
-  const [fieldErrors, setFieldErrors]   = useState({});
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   function toggleMode() {
-    setMode((m) => (m === 'login' ? 'register' : 'login'));
-    setError('');
+    setMode((m) => (m === "login" ? "register" : "login"));
+    setError("");
     setFieldErrors({});
   }
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
-    setForm((p) => ({ ...p, [name]: type === 'checkbox' ? checked : value }));
-    if (fieldErrors[name]) setFieldErrors((p) => ({ ...p, [name]: '' }));
-    if (error) setError('');
+    setForm((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }));
+    if (fieldErrors[name]) setFieldErrors((p) => ({ ...p, [name]: "" }));
+    if (error) setError("");
   }
 
   function validate() {
     const errs = {};
-    if (mode === 'register' && !form.name.trim()) errs.name = 'Name is required.';
-    if (!form.email.trim()) errs.email = 'Email is required.';
-    else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Enter a valid email address.';
-    if (!form.password) errs.password = 'Password is required.';
-    else if (mode === 'register' && form.password.length < 8) errs.password = 'Password must be at least 8 characters.';
-    if (mode === 'register' && form.password !== form.password_confirmation)
-      errs.password_confirmation = 'Passwords do not match.';
+    if (mode === "register" && !form.name.trim())
+      errs.name = "Name is required.";
+    if (!form.email.trim()) errs.email = "Email is required.";
+    else if (!/\S+@\S+\.\S+/.test(form.email))
+      errs.email = "Enter a valid email address.";
+    if (!form.password) errs.password = "Password is required.";
+    else if (mode === "register" && form.password.length < 8)
+      errs.password = "Password must be at least 8 characters.";
+    if (mode === "register" && form.password !== form.password_confirmation)
+      errs.password_confirmation = "Passwords do not match.";
     return errs;
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
     const errs = validate();
-    if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
     setIsSubmitting(true);
-    setError('');
+    setError("");
     setFieldErrors({});
     try {
       let user;
-      if (mode === 'login') {
+      if (mode === "login") {
         user = await login(form);
       } else {
         user = await register({
@@ -73,14 +96,24 @@ export default function Login() {
           password_confirmation: form.password_confirmation,
         });
       }
-      navigate(roleRedirects[user.role] ?? '/', { replace: true });
+      navigate(roleRedirects[user.role] ?? "/", { replace: true });
     } catch (err) {
-      setError(err.message ?? (mode === 'login' ? 'Login failed.' : 'Registration failed.'));
+      const nextError =
+        err.message ??
+        (mode === "login" ? "Login failed." : "Registration failed.");
+      setError(nextError);
+
       if (err.errors) {
         const mapped = {};
         for (const [key, messages] of Object.entries(err.errors)) {
           mapped[key] = messages[0];
         }
+
+        if (mode === "login" && isCredentialsError(err)) {
+          delete mapped.email;
+          delete mapped.password;
+        }
+
         setFieldErrors(mapped);
       }
     } finally {
@@ -132,12 +165,15 @@ export default function Login() {
                   </p>
                   <div className="space-y-3">
                     <h2 className="max-w-[10ch] text-[1.625rem] font-medium leading-[1.12] tracking-[-0.035em] text-white lg:text-[2.4rem]">
-                      Serve faster.<br />
-                      Manage smarter.<br />
+                      Serve faster.
+                      <br />
+                      Manage smarter.
+                      <br />
                       Feed campus better.
                     </h2>
                     <p className="max-w-[32ch] text-[13px] leading-[1.65] text-white/72 lg:text-[14px]">
-                      Manage orders, inventory, and service with one streamlined platform.
+                      Manage orders, inventory, and service with one streamlined
+                      platform.
                     </p>
                   </div>
                 </div>
@@ -150,8 +186,8 @@ export default function Login() {
               className="flex flex-col items-center justify-center p-6 lg:p-10 order-1 lg:order-2"
             >
               <div
-                className="bg-white rounded-2xl w-full p-8 max-w-[420px] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.05),0_20px_52px_rgba(0,0,0,0.09)] ring-1 ring-slate-900/[0.05]"
-                style={{ transform: 'none', transformOrigin: '50% 50% 0px' }}
+                className="bg-white rounded-2xl w-full p-8 max-w-[420px] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.05),0_20px_52px_rgba(0,0,0,0.09)]"
+                style={{ transform: "none", transformOrigin: "50% 50% 0px" }}
               >
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
@@ -162,19 +198,19 @@ export default function Login() {
                     exit={{ opacity: 0 }}
                     transition={{
                       duration: 0.25,
-                      ease: 'easeInOut',
+                      ease: "easeInOut",
                       layout: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
                     }}
                   >
                     {/* Heading */}
-                    <div className="mb-7">
-                      <h1 className="text-[27px] font-semibold tracking-[-0.02em] text-foreground">
-                        {mode === 'login' ? 'Sign in' : 'Create account'}
+                    <div className="mb-4 text-center">
+                      <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-foreground sm:text-[32px]">
+                        {mode === "login" ? "Sign in" : "Create account"}
                       </h1>
-                      <p className="text-[13.5px] leading-[1.5] text-muted-foreground mt-1.5">
-                        {mode === 'login'
-                          ? 'Welcome back. Enter your account details to continue.'
-                          : 'Fill in the details below to create your account.'}
+                      <p className="mx-auto mt-1.5 max-w-[30ch] text-[14px] leading-[1.6] text-muted-foreground">
+                        {mode === "login"
+                          ? "Enter your account details to continue."
+                          : "Fill in the details to create your account."}
                       </p>
                     </div>
 
@@ -185,17 +221,27 @@ export default function Login() {
                       </div>
                     )}
 
-                    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                    <form
+                      onSubmit={handleSubmit}
+                      noValidate
+                      className="space-y-4"
+                    >
                       {/* Name - register only */}
-                      {mode === 'register' && (
+                      {mode === "register" && (
                         <motion.div
                           className="space-y-2"
                           initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
+                          animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                          transition={{
+                            duration: 0.35,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
                         >
-                          <Label htmlFor="name" className="text-[13px] font-medium">
+                          <Label
+                            htmlFor="name"
+                            className="text-[13px] font-medium"
+                          >
                             Full name
                           </Label>
                           <Input
@@ -208,19 +254,24 @@ export default function Login() {
                             onChange={handleChange}
                             className={`h-[50px] rounded-xl ${
                               fieldErrors.name
-                                ? 'border-red-400 focus-visible:ring-red-300'
-                                : 'border-slate-300 focus-visible:ring-blue-400/25 focus-visible:border-blue-400'
+                                ? "border-red-400 focus-visible:ring-red-300"
+                                : "border-slate-300 focus-visible:ring-0 focus-visible:border-slate-300"
                             }`}
                           />
                           {fieldErrors.name && (
-                            <p className="text-xs text-red-500">{fieldErrors.name}</p>
+                            <p className="text-xs text-red-500">
+                              {fieldErrors.name}
+                            </p>
                           )}
                         </motion.div>
                       )}
 
                       {/* Email */}
                       <div className="space-y-2">
-                        <Label htmlFor="email" className="text-[13px] font-medium">
+                        <Label
+                          htmlFor="email"
+                          className="text-[13px] font-medium"
+                        >
                           Email address
                         </Label>
                         <div className="relative">
@@ -235,19 +286,24 @@ export default function Login() {
                             onChange={handleChange}
                             className={`h-[50px] pl-10 rounded-xl ${
                               fieldErrors.email
-                                ? 'border-red-400 focus-visible:ring-red-300'
-                                : 'border-slate-300 focus-visible:ring-blue-400/25 focus-visible:border-blue-400'
+                                ? "border-red-400 focus-visible:ring-red-300"
+                                : "border-slate-300 focus-visible:ring-0 focus-visible:border-slate-300"
                             }`}
                           />
                         </div>
                         {fieldErrors.email && (
-                          <p className="text-xs text-red-500">{fieldErrors.email}</p>
+                          <p className="text-xs text-red-500">
+                            {fieldErrors.email}
+                          </p>
                         )}
                       </div>
 
                       {/* Password */}
                       <div className="space-y-2">
-                        <Label htmlFor="password" className="text-[13px] font-medium">
+                        <Label
+                          htmlFor="password"
+                          className="text-[13px] font-medium"
+                        >
                           Password
                         </Label>
                         <div className="relative">
@@ -255,17 +311,19 @@ export default function Login() {
                           <Input
                             id="password"
                             name="password"
-                            type={showPassword ? 'text' : 'password'}
+                            type={showPassword ? "text" : "password"}
                             autoComplete={
-                              mode === 'login' ? 'current-password' : 'new-password'
+                              mode === "login"
+                                ? "current-password"
+                                : "new-password"
                             }
                             placeholder="Password"
                             value={form.password}
                             onChange={handleChange}
                             className={`h-[50px] pl-10 pr-10 rounded-xl ${
                               fieldErrors.password
-                                ? 'border-red-400 focus-visible:ring-red-300'
-                                : 'border-slate-300 focus-visible:ring-blue-400/25 focus-visible:border-blue-400'
+                                ? "border-red-400 focus-visible:ring-red-300"
+                                : "border-slate-300 focus-visible:ring-0 focus-visible:border-slate-300"
                             }`}
                           />
                           <button
@@ -273,7 +331,9 @@ export default function Login() {
                             onClick={() => setShowPassword((v) => !v)}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                             tabIndex={-1}
-                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            aria-label={
+                              showPassword ? "Hide password" : "Show password"
+                            }
                           >
                             {showPassword ? (
                               <EyeOff className="w-4 h-4" />
@@ -283,18 +343,23 @@ export default function Login() {
                           </button>
                         </div>
                         {fieldErrors.password && (
-                          <p className="text-xs text-red-500">{fieldErrors.password}</p>
+                          <p className="text-xs text-red-500">
+                            {fieldErrors.password}
+                          </p>
                         )}
                       </div>
 
                       {/* Password confirm - register only */}
-                      {mode === 'register' && (
+                      {mode === "register" && (
                         <motion.div
                           className="space-y-2"
                           initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
+                          animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                          transition={{
+                            duration: 0.35,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
                         >
                           <Label
                             htmlFor="password_confirmation"
@@ -312,8 +377,8 @@ export default function Login() {
                             onChange={handleChange}
                             className={`h-[50px] rounded-xl ${
                               fieldErrors.password_confirmation
-                                ? 'border-red-400 focus-visible:ring-red-300'
-                                : 'border-slate-300 focus-visible:ring-blue-400/25 focus-visible:border-blue-400'
+                                ? "border-red-400 focus-visible:ring-red-300"
+                                : "border-slate-300 focus-visible:ring-0 focus-visible:border-slate-300"
                             }`}
                           />
                           {fieldErrors.password_confirmation && (
@@ -325,20 +390,26 @@ export default function Login() {
                       )}
 
                       {/* Remember me + Forgot password - login only */}
-                      {mode === 'login' && (
+                      {mode === "login" && (
                         <motion.div
                           className="flex items-center justify-between"
                           initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
+                          animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                          transition={{
+                            duration: 0.35,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
                         >
                           <div className="flex items-center gap-2">
                             <Checkbox
                               id="remember"
                               checked={form.remember}
                               onCheckedChange={(checked) =>
-                                setForm((p) => ({ ...p, remember: checked === true }))
+                                setForm((p) => ({
+                                  ...p,
+                                  remember: checked === true,
+                                }))
                               }
                             />
                             <Label
@@ -370,14 +441,14 @@ export default function Login() {
                         before:absolute before:top-0 before:left-[-80%] before:h-full before:w-full 
                         before:bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.16),transparent)] before:transition-[left] 
                         before:duration-[450ms] before:ease-out hover:before:left-[100%]"
-                        >
+                      >
                         {isSubmitting
-                          ? mode === 'login'
-                            ? 'Signing in...'
-                            : 'Creating account...'
-                          : mode === 'login'
-                          ? 'Sign in'
-                          : 'Create account'}
+                          ? mode === "login"
+                            ? "Signing in..."
+                            : "Creating account..."
+                          : mode === "login"
+                            ? "Sign in"
+                            : "Create account"}
                       </Button>
                     </form>
                   </motion.div>
@@ -385,15 +456,15 @@ export default function Login() {
 
                 {/* Mode toggle */}
                 <p className="mt-5 text-sm text-center text-muted-foreground">
-                  {mode === 'login'
+                  {mode === "login"
                     ? "Don't have an account? "
-                    : 'Already have an account? '}
+                    : "Already have an account? "}
                   <button
                     type="button"
                     onClick={toggleMode}
                     className="font-medium text-[#2563EB] hover:text-[#1d4ed8] hover:underline transition-colors duration-150"
                   >
-                    {mode === 'login' ? 'Sign up' : 'Sign in'}
+                    {mode === "login" ? "Sign up" : "Sign in"}
                   </button>
                 </p>
               </div>

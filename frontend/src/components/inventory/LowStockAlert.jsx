@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function LowStockAlert({ items, onViewLowStock }) {
   if (!items || items.length === 0) return null;
@@ -21,14 +22,16 @@ export default function LowStockAlert({ items, onViewLowStock }) {
         </p>
       </div>
       {onViewLowStock && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={onViewLowStock}
-          className="text-xs font-medium px-3 py-1.5 rounded-lg shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40"
+          className="h-8 shrink-0 px-3 text-xs font-medium focus-visible:ring-red-400/40"
           style={{ backgroundColor: 'rgba(248,113,113,0.15)', color: 'var(--color-error)' }}
         >
           View All
-        </button>
+        </Button>
       )}
     </div>
   );

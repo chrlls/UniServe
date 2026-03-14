@@ -1,18 +1,53 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Clock, CheckCircle, XCircle, ChefHat } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  AlertCircle,
+  ArrowLeft,
+  ChefHat,
+  CheckCircle,
+  Clock,
+  Printer,
+  XCircle,
+} from 'lucide-react';
 import orderService from '../../services/orderService';
+import { useAuth } from '@/context/AuthContext';
+import { useAccountPreferences } from '@/lib/preferences';
 import LoadingSpinner from '../common/LoadingSpinner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 const STATUS_CONFIG = {
-  pending:   { label: 'Pending',   bg: 'rgba(234,179,8,0.1)',   color: '#eab308', icon: Clock },
-  preparing: { label: 'Preparing', bg: 'rgba(59,130,246,0.1)',  color: '#3b82f6', icon: ChefHat },
-  ready:     { label: 'Ready',     bg: 'rgba(74,222,128,0.1)',  color: '#4ade80', icon: CheckCircle },
-  completed: { label: 'Completed', bg: 'rgba(148,163,184,0.1)', color: '#94a3b8', icon: CheckCircle },
-  cancelled: { label: 'Cancelled', bg: 'rgba(248,113,113,0.1)', color: '#f87171', icon: XCircle },
+  pending: {
+    label: 'Pending',
+    badgeClass: 'border-0 bg-amber-500/10 text-amber-600 hover:bg-amber-500/10 hover:text-amber-600',
+    icon: Clock,
+  },
+  preparing: {
+    label: 'Preparing',
+    badgeClass: 'border-0 bg-blue-500/10 text-blue-600 hover:bg-blue-500/10 hover:text-blue-600',
+    icon: ChefHat,
+  },
+  ready: {
+    label: 'Ready',
+    badgeClass: 'border-0 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600',
+    icon: CheckCircle,
+  },
+  completed: {
+    label: 'Completed',
+    badgeClass: 'border-0 bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground',
+    icon: CheckCircle,
+  },
+  cancelled: {
+    label: 'Cancelled',
+    badgeClass: 'border-0 bg-destructive/10 text-destructive hover:bg-destructive/10 hover:text-destructive',
+    icon: XCircle,
+  },
 };
 
 export default function OrderReceipt() {
+  const { user } = useAuth();
+  const { formatDateTime, t } = useAccountPreferences();
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
@@ -32,19 +67,22 @@ export default function OrderReceipt() {
         setLoading(false);
       }
     }
+
     fetchOrder();
   }, [id]);
 
-  if (loading) return <LoadingSpinner message="Loading order..." />;
+  if (loading) {
+    return <LoadingSpinner message="Loading order..." />;
+  }
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <XCircle size={48} style={{ color: 'var(--color-error)' }} className="mb-4" />
-        <p className="text-sm" style={{ color: 'var(--color-error)' }}>{error}</p>
-        <button onClick={() => navigate(-1)} className="mt-4 px-4 py-2 rounded-lg text-sm" style={{ border: '1px solid var(--color-border-subtle)', color: 'var(--color-text-secondary)' }}>
+        <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
+        <p className="text-sm text-destructive">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="mt-4">
           Go Back
-        </button>
+        </Button>
       </div>
     );
   }
@@ -53,90 +91,105 @@ export default function OrderReceipt() {
 
   const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
   const StatusIcon = config.icon;
+  const canPrint = user?.role === 'admin' || user?.role === 'cashier';
+  const customerLabel = order.customer?.name || t('common.orderSource.walkIn');
+  const sourceLabel = order.customer_id
+    ? t('common.orderSource.online')
+    : t('common.orderSource.walkIn');
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-          <ArrowLeft size={18} /> Back
-        </button>
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm print:hidden"
-          style={{ border: '1px solid var(--color-border-subtle)', color: 'var(--color-text-secondary)' }}
-        >
-          <Printer size={16} /> Print
-        </button>
-      </div>
-
-      {/* Receipt Card */}
-      <div className="rounded-xl p-6 space-y-6" style={{ backgroundColor: 'var(--color-surface-raised)', border: '1px solid var(--color-border-subtle)' }}>
-        {/* Order info */}
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold font-mono" style={{ color: 'var(--color-text)' }}>
-            {order.order_number}
-          </h1>
-          <span
-            className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium"
-            style={{ backgroundColor: config.bg, color: config.color }}
+    <div className="mx-auto max-w-2xl space-y-6 print:max-w-none print:space-y-0">
+      <div className="flex items-center justify-between print:hidden">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2 px-0">
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        {canPrint ? (
+          <Button
+            onClick={() => window.print()}
+            variant="outline"
+            size="sm"
+            className="gap-2 print:hidden"
           >
-            <StatusIcon size={14} />
-            {config.label}
-          </span>
-          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            {new Date(order.ordered_at).toLocaleString()}
-          </p>
-        </div>
-
-        {/* Customer / Cashier info */}
-        <div className="grid grid-cols-2 gap-4 text-sm" style={{ borderTop: '1px solid var(--color-border-subtle)', paddingTop: '1rem' }}>
-          <div>
-            <p style={{ color: 'var(--color-text-secondary)' }}>Customer</p>
-            <p className="font-medium" style={{ color: 'var(--color-text)' }}>{order.customer?.name || 'Walk-in'}</p>
-          </div>
-          <div>
-            <p style={{ color: 'var(--color-text-secondary)' }}>Cashier</p>
-            <p className="font-medium" style={{ color: 'var(--color-text)' }}>{order.cashier?.name || '—'}</p>
-          </div>
-          <div>
-            <p style={{ color: 'var(--color-text-secondary)' }}>Payment</p>
-            <p className="font-medium capitalize" style={{ color: 'var(--color-text)' }}>{order.payment_method}</p>
-          </div>
-        </div>
-
-        {/* Items table */}
-        <div style={{ borderTop: '1px solid var(--color-border-subtle)', paddingTop: '1rem' }}>
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th className="text-left py-2 font-medium" style={{ color: 'var(--color-text-secondary)' }}>Item</th>
-                <th className="text-center py-2 font-medium" style={{ color: 'var(--color-text-secondary)' }}>Qty</th>
-                <th className="text-right py-2 font-medium" style={{ color: 'var(--color-text-secondary)' }}>Price</th>
-                <th className="text-right py-2 font-medium" style={{ color: 'var(--color-text-secondary)' }}>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.items?.map((item) => (
-                <tr key={item.id} style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
-                  <td className="py-2" style={{ color: 'var(--color-text)' }}>{item.menu_item?.name || `Item #${item.menu_item_id}`}</td>
-                  <td className="py-2 text-center" style={{ color: 'var(--color-text-secondary)' }}>{item.quantity}</td>
-                  <td className="py-2 text-right" style={{ color: 'var(--color-text-secondary)' }}>₱{Number(item.unit_price).toFixed(2)}</td>
-                  <td className="py-2 text-right font-medium" style={{ color: 'var(--color-text)' }}>₱{Number(item.line_total).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Total */}
-        <div className="flex items-center justify-between pt-4" style={{ borderTop: '2px solid var(--color-border-subtle)' }}>
-          <span className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>Total</span>
-          <span className="text-2xl font-bold" style={{ color: 'var(--color-accent)' }}>
-            ₱{Number(order.total_amount).toFixed(2)}
-          </span>
-        </div>
+            <Printer className="h-4 w-4" />
+            Print
+          </Button>
+        ) : null}
       </div>
+
+      <Card className="border-border/70 bg-card shadow-sm print:border-0 print:bg-transparent print:shadow-none">
+        <CardContent className="space-y-6 p-6 print:space-y-5 print:p-0">
+          <div className="space-y-2 text-center">
+            <h1 className="font-mono text-2xl font-bold tracking-tight">
+              {order.order_number}
+            </h1>
+            <Badge className={`pointer-events-none gap-1 px-3 py-1 text-sm font-medium transition-none ${config.badgeClass}`}>
+              <StatusIcon className="h-3.5 w-3.5" />
+              {config.label}
+            </Badge>
+            <p className="text-sm text-muted-foreground">
+              {formatDateTime(order.ordered_at)}
+            </p>
+          </div>
+
+          <div className="grid gap-4 border-t border-border pt-4 text-sm sm:grid-cols-2">
+            <div>
+              <p className="text-muted-foreground">Customer</p>
+              <p className="font-medium text-foreground">{customerLabel}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Cashier</p>
+              <p className="font-medium text-foreground">{order.cashier?.name || '-'}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Payment</p>
+              <p className="font-medium capitalize text-foreground">{order.payment_method}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">{t('common.orderSource.label')}</p>
+              <p className="font-medium text-foreground">{sourceLabel}</p>
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="py-2 text-left font-medium text-muted-foreground">Item</th>
+                    <th className="py-2 text-center font-medium text-muted-foreground">Qty</th>
+                    <th className="py-2 text-right font-medium text-muted-foreground">Price</th>
+                    <th className="py-2 text-right font-medium text-muted-foreground">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.items?.map((item) => (
+                    <tr key={item.id} className="border-b border-border last:border-b-0">
+                      <td className="py-3 text-foreground">
+                        {item.menu_item?.name || `Item #${item.menu_item_id}`}
+                      </td>
+                      <td className="py-3 text-center text-muted-foreground">{item.quantity}</td>
+                      <td className="py-3 text-right text-muted-foreground">
+                        PHP {Number(item.unit_price).toFixed(2)}
+                      </td>
+                      <td className="py-3 text-right font-medium text-foreground">
+                        PHP {Number(item.line_total).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t-2 border-border pt-4">
+            <span className="text-lg font-semibold text-foreground">Total</span>
+            <span className="text-2xl font-bold text-primary">
+              PHP {Number(order.total_amount).toFixed(2)}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

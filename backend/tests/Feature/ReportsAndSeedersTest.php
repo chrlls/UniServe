@@ -86,7 +86,7 @@ class ReportsAndSeedersTest extends TestCase
         $this->assertGreaterThanOrEqual(5, Category::query()->count());
         $this->assertGreaterThanOrEqual(30, MenuItem::query()->count());
         $this->assertGreaterThanOrEqual(200, Order::query()->count());
-        $this->assertDatabaseHas('users', ['email' => 'admin@canteen.test']);
+        $this->assertDatabaseHas('users', ['email' => env('SUPER_ADMIN_EMAIL', 'admin@canteen.test')]);
         $this->assertDatabaseHas('users', ['email' => 'cashier@canteen.test']);
         $this->assertDatabaseHas('users', ['email' => 'customer@canteen.test']);
     }

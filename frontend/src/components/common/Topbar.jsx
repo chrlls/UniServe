@@ -1,13 +1,10 @@
-﻿
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from "react";
 import "@theme-toggles/react/css/Classic.css";
 import { Classic } from "@theme-toggles/react";
-import { Search, Bell, ChevronRight, SidebarIcon } from "lucide-react";
+import { Bell, CheckCheck, ChevronRight, SidebarIcon } from "lucide-react";
 // eslint-disable-next-line no-unused-vars -- used as <motion.div> JSX element
 import { motion } from "framer-motion";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,95 +13,186 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { useSidebar } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useAccountPreferences } from "@/lib/preferences";
 import { useNavigate } from "react-router-dom";
 import orderService from "@/services/orderService";
 import inventoryService from "@/services/inventoryService";
-import { toast } from "sonner";
+
+const NOTIFICATION_READ_KEY = "topbar_read_notifications";
 
 function orderStatusText(status) {
   switch (status) {
-    case 'pending':
-      return 'is awaiting preparation';
-    case 'preparing':
-      return 'is now being prepared';
-    case 'ready':
-      return 'is ready for pickup';
-    case 'completed':
-      return 'has been completed';
-    case 'cancelled':
-      return 'was cancelled';
+    case "pending":
+      return "is awaiting preparation";
+    case "preparing":
+      return "is now being prepared";
+    case "ready":
+      return "is ready for pickup";
+    case "completed":
+      return "has been completed";
+    case "cancelled":
+      return "was cancelled";
     default:
-      return 'was updated';
+      return "was updated";
   }
 }
 
-export function Topbar({ title = "Dashboard", breadcrumbs }) {
+export function Topbar({
+  title = "Dashboard",
+  breadcrumbs,
+  isScrolled = false,
+}) {
   const { toggleSidebar } = useSidebar();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { isDark, toggle, toggleRef } = useTheme();
+  const { formatDateTime, t } = useAccountPreferences();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
+  const [readNotificationIds, setReadNotificationIds] = useState(() => {
+    if (typeof window === "undefined") return [];
 
-  const fullName = user?.name ?? "Account";
-  const roleLabel = user?.role ?? "No role assigned";
-  const initials = user?.name
-    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-    : "NA";
+    try {
+      const raw = window.localStorage.getItem(NOTIFICATION_READ_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
 
-  const unreadCount = notifications.length;
+  const unreadCount = notifications.filter((notification) => !notification.isRead).length;
+  const userId = user?.id ?? null;
+  const userRole = user?.role ?? null;
 
-  const normalizedNotifications = useMemo(() => notifications.slice(0, 5), [notifications]);
+  const normalizedNotifications = useMemo(
+    () => notifications.slice(0, 5),
+    [notifications],
+  );
+  const hasUnreadNotifications = unreadCount > 0;
+  const topbarSurfaceClass = isDark
+    ? isScrolled
+      ? "bg-[#0d121b]/72 shadow-[0_16px_40px_rgba(0,0,0,0.52)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#0d121b]/58"
+      : "bg-[#101823]/96 shadow-[0_8px_22px_rgba(0,0,0,0.22)]"
+    : isScrolled
+      ? "bg-[#f6f8fb]/82 shadow-[0_14px_34px_rgba(15,23,42,0.12)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#f6f8fb]/70"
+      : "bg-[#f8fafc]/92 shadow-[0_8px_22px_rgba(15,23,42,0.07)] backdrop-blur-sm supports-[backdrop-filter]:bg-[#f8fafc]/88";
+  const iconButtonClass = isDark
+    ? "text-foreground hover:bg-white/6"
+    : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900";
+  const titleClass = isDark ? "text-foreground" : "text-slate-900";
+  const crumbClass = isDark
+    ? "text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+    : "cursor-pointer text-slate-500 transition-colors hover:text-slate-900";
+
+  function persistReadNotificationIds(nextIds) {
+    setReadNotificationIds(nextIds);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        NOTIFICATION_READ_KEY,
+        JSON.stringify(nextIds),
+      );
+    }
+  }
+
+  function markNotificationAsRead(notificationId) {
+    if (readNotificationIds.includes(notificationId)) return;
+    persistReadNotificationIds([...readNotificationIds, notificationId]);
+  }
+
+  function handleMarkAllAsRead() {
+    const unreadIds = notifications
+      .filter((notification) => !notification.isRead)
+      .map((notification) => notification.id);
+
+    if (unreadIds.length === 0) return;
+
+    persistReadNotificationIds([
+      ...new Set([...readNotificationIds, ...unreadIds]),
+    ]);
+  }
 
   useEffect(() => {
     let isActive = true;
 
     async function loadNotifications() {
-      if (!user) {
+      if (!userId) {
         if (isActive) setNotifications([]);
         return;
       }
 
-      try {
-        const [orders, inventoryData] = await Promise.all([
-          orderService.getAll(),
-          user.role === 'admin' || user.role === 'cashier'
-            ? inventoryService.getAll({ low_stock_only: true })
-            : Promise.resolve({ inventoryItems: [] }),
-        ]);
+      const [ordersResult, inventoryResult] = await Promise.allSettled([
+        orderService.getAll(),
+        userRole === "admin" || userRole === "cashier"
+          ? inventoryService.getAll({ low_stock_only: true })
+          : Promise.resolve({ inventoryItems: [] }),
+      ]);
 
-        const orderNotifications = orders
-          .slice(0, 4)
-          .map((order) => ({
-            id: `order-${order.id}-${order.updated_at ?? order.created_at ?? order.ordered_at}`,
-            title: `Order ${order.order_number}`,
-            message: `Status ${orderStatusText(order.status)}.`,
-            timestamp: new Date(order.updated_at ?? order.created_at ?? order.ordered_at ?? Date.now()).getTime(),
-          }));
+      if (
+        ordersResult.status === "rejected" &&
+        inventoryResult.status === "rejected"
+      ) {
+        return;
+      }
 
-        const lowStockNotifications = (inventoryData.inventoryItems ?? [])
-          .slice(0, 2)
-          .map((item) => ({
-            id: `stock-${item.id}-${item.updated_at ?? item.created_at}`,
-            title: 'Low Stock Alert',
-            message: `${item.name} is at ${item.stock_quantity} remaining.`,
-            timestamp: new Date(item.updated_at ?? item.created_at ?? Date.now()).getTime(),
-          }));
+      const orders =
+        ordersResult.status === "fulfilled" && Array.isArray(ordersResult.value)
+          ? ordersResult.value
+          : [];
 
-        const merged = [...orderNotifications, ...lowStockNotifications]
-          .sort((a, b) => b.timestamp - a.timestamp)
-          .slice(0, 5);
+      const inventoryItems =
+        inventoryResult.status === "fulfilled" &&
+        Array.isArray(inventoryResult.value?.inventoryItems)
+          ? inventoryResult.value.inventoryItems
+          : [];
 
-        if (isActive) {
-          setNotifications(merged);
-        }
-      } catch {
-        if (isActive) {
-          setNotifications([]);
-        }
+      const orderNotifications = orders.slice(0, 4).map((order) => {
+        const notificationId = `order-${order.id}-${order.updated_at ?? order.created_at ?? order.ordered_at}`;
+        const timestamp = new Date(
+          order.updated_at ??
+            order.created_at ??
+            order.ordered_at ??
+            Date.now(),
+        ).getTime();
+        return {
+          id: notificationId,
+          title: `Order ${order.order_number}`,
+          message:
+            order.status === "cancelled"
+              ? "Order was cancelled."
+              : `Status ${orderStatusText(order.status)}.`,
+          timestamp,
+          href: `/orders/${order.id}`,
+          timeLabel: Number.isFinite(timestamp) ? formatDateTime(timestamp) : t("common.justNow"),
+          isRead: readNotificationIds.includes(notificationId),
+        };
+      });
+
+      const lowStockNotifications = inventoryItems.slice(0, 2).map((item) => {
+        const notificationId = `stock-${item.id}-${item.updated_at ?? item.created_at}`;
+        const timestamp = new Date(
+          item.updated_at ?? item.created_at ?? Date.now(),
+        ).getTime();
+        return {
+          id: notificationId,
+          title: t("notifications.lowStockAlert"),
+          message: `${item.name} is at ${item.stock_quantity} remaining.`,
+          timestamp,
+          timeLabel: Number.isFinite(timestamp) ? formatDateTime(timestamp) : t("common.justNow"),
+          isRead: readNotificationIds.includes(notificationId),
+        };
+      });
+
+      const merged = [...orderNotifications, ...lowStockNotifications]
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 5);
+
+      if (isActive) {
+        setNotifications(merged);
       }
     }
 
@@ -115,36 +203,24 @@ export function Topbar({ title = "Dashboard", breadcrumbs }) {
       isActive = false;
       clearInterval(interval);
     };
-  }, [user]);
-
-  const handleSignOut = async () => {
-    try {
-      await logout();
-      toast.success("You have been signed out successfully.");
-      navigate("/login", { replace: true });
-    } catch (error) {
-      toast.error(
-        `Logout failed: ${error instanceof Error ? error.message : "Unable to log out."}`,
-      );
-    }
-  };
+  }, [formatDateTime, readNotificationIds, t, userId, userRole]);
 
   return (
-    <div className="sticky top-0 z-40 flex h-[88px] w-full shrink-0 bg-transparent px-4 py-2 md:px-5 xl:px-6">
+    <div className="sticky top-0 z-40 w-full pb-2 print:hidden">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 24 }}
-        className="z-10 flex h-[72px] w-full items-center justify-between gap-4 rounded-2xl bg-sidebar/90 px-5 shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-sidebar/75"
+        className={`relative z-10 flex h-[72px] w-full items-center justify-between gap-4 overflow-hidden rounded-2xl px-6 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-250 ease-out ${topbarSurfaceClass}`}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleSidebar}
-            className="h-8 w-8 lg:hidden"
+            className={`h-9 w-9 lg:hidden ${iconButtonClass}`}
           >
-            <SidebarIcon className="h-4 w-4" />
+            <SidebarIcon className="h-5 w-5" />
           </Button>
 
           <div className="flex items-center gap-2">
@@ -153,14 +229,14 @@ export function Topbar({ title = "Dashboard", breadcrumbs }) {
                 {breadcrumbs.map((crumb, index) => (
                   <div key={index} className="flex items-center gap-1">
                     {index > 0 && (
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     )}
                     {index === breadcrumbs.length - 1 ? (
-                      <span className="font-semibold text-foreground">
+                      <span className={`font-medium ${titleClass}`}>
                         {crumb.label}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+                      <span className={crumbClass}>
                         {crumb.label}
                       </span>
                     )}
@@ -168,32 +244,22 @@ export function Topbar({ title = "Dashboard", breadcrumbs }) {
                 ))}
               </nav>
             ) : (
-              <h1 className="text-base font-semibold text-foreground">{title}</h1>
+              <h1 className={`text-xl font-semibold ${titleClass}`}>{title}</h1>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="relative hidden md:block">
-            <label htmlFor="search-input" className="sr-only">
-              Search
-            </label>
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" />
-            <Input
-              id="search-input"
-              placeholder="Search menu, orders..."
-              className="h-8 w-56 bg-background/90 pl-9 text-sm shadow-sm xl:w-64"
-              aria-label="Search"
-            />
-          </div>
-
+        <div className="flex items-center gap-3 shrink-0">
           {/* Theme toggle */}
-          <div ref={toggleRef} className="flex items-center justify-center h-8 w-8">
+          <div
+            ref={toggleRef}
+            className="flex items-center justify-center h-8 w-8"
+          >
             <Classic
-              duration={750}
+              duration={500}
               toggled={isDark}
               onToggle={toggle}
-              className="text-foreground"
+              className={isDark ? "text-foreground" : "text-slate-700"}
               style={{ fontSize: "1.1rem" }}
             />
           </div>
@@ -203,31 +269,96 @@ export function Topbar({ title = "Dashboard", breadcrumbs }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative h-8 w-8"
+                className={`relative h-9 w-9 ${iconButtonClass}`}
                 aria-label="Notifications"
                 title="View notifications"
               >
-                <Bell className="h-4 w-4" />
+                <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]" aria-label={`${unreadCount} unread notifications`}>
+                  <span
+                    className="pointer-events-none absolute -right-1 -top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
+                    aria-label={`${unreadCount} unread notifications`}
+                  >
                     {Math.min(unreadCount, 9)}
-                  </Badge>
+                  </span>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuContent
+              align="end"
+              className="w-80 rounded-2xl border-border/60 p-1.5"
+            >
+              <DropdownMenuLabel className="flex items-center justify-between gap-3 px-2 py-2">
+                <span>{t("notifications.title")}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={handleMarkAllAsRead}
+                  disabled={!hasUnreadNotifications}
+                >
+                  <CheckCheck className="h-3.5 w-3.5" />
+                  {t("notifications.markAllRead")}
+                </Button>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {normalizedNotifications.length === 0 ? (
                 <DropdownMenuItem disabled>
-                  <p className="text-xs text-muted-foreground">No recent notifications.</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("notifications.none")}
+                  </p>
                 </DropdownMenuItem>
               ) : (
                 normalizedNotifications.map((notification) => (
-                  <DropdownMenuItem key={notification.id}>
+                  <DropdownMenuItem
+                    key={notification.id}
+                    onClick={() => {
+                      markNotificationAsRead(notification.id);
+                      if (notification.href) navigate(notification.href);
+                    }}
+                    className={
+                      notification.href
+                        ? cn(
+                            "group cursor-pointer rounded-xl px-3 py-3 transition-colors focus:text-foreground data-[highlighted]:text-foreground",
+                            notification.isRead
+                              ? "text-foreground hover:bg-muted/60 focus:bg-muted/60 data-[highlighted]:bg-muted/60"
+                              : "bg-primary/8 text-foreground hover:bg-primary/12 focus:bg-primary/12 data-[highlighted]:bg-primary/12",
+                          )
+                        : ""
+                    }
+                  >
                     <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium">{notification.title}</p>
-                      <p className="text-xs text-muted-foreground">{notification.message}</p>
+                      <p
+                        className={cn(
+                          "text-sm font-medium",
+                          notification.isRead
+                            ? "text-foreground"
+                            : "text-foreground",
+                        )}
+                      >
+                        {notification.title}
+                      </p>
+                      <p
+                        className={cn(
+                          "text-xs",
+                          notification.isRead
+                            ? "text-muted-foreground"
+                            : "text-primary/80 dark:text-primary/70",
+                        )}
+                      >
+                        {notification.message}
+                      </p>
+                      <p
+                        className={cn(
+                          "text-[11px]",
+                          notification.isRead
+                            ? "text-muted-foreground/80"
+                            : "text-primary/70 dark:text-primary/60",
+                        )}
+                      >
+                        {notification.timeLabel}
+                      </p>
                     </div>
                   </DropdownMenuItem>
                 ))
@@ -235,40 +366,6 @@ export function Topbar({ title = "Dashboard", breadcrumbs }) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="relative h-8 w-8 rounded-full cursor-pointer"
-                aria-label="User menu"
-                title="Open user menu"
-              >
-                <Avatar className="h-8 w-8">
-                  <AvatarImage
-                    src={user?.avatar_url}
-                    alt={`${fullName} avatar`}
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span>{fullName}</span>
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {roleLabel}
-                  </span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Account Settings</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>Log out</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </motion.div>
     </div>

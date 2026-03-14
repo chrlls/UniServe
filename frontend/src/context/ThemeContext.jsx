@@ -1,12 +1,12 @@
-import { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { flushSync } from 'react-dom';
+import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { flushSync } from "react-dom";
 
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(() => {
     // Persist preference across reloads
-    return localStorage.getItem('theme') === 'dark';
+    return localStorage.getItem("theme") === "dark";
   });
   const toggleRef = useRef(null);
 
@@ -14,19 +14,21 @@ export function ThemeProvider({ children }) {
     if (
       !toggleRef.current ||
       !document.startViewTransition ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
       setIsDark(val);
       return;
     }
 
     await document.startViewTransition(() => {
-      flushSync(() => { setIsDark(val); });
+      flushSync(() => {
+        setIsDark(val);
+      });
     }).ready;
 
-    const { top, left, width, height } = toggleRef.current.getBoundingClientRect();
-    const x = left + width / 2;
-    const y = top + height / 2;
+    const { top, left } = toggleRef.current.getBoundingClientRect();
+    const x = left;
+    const y = top;
     const right = window.innerWidth - left;
     const bottom = window.innerHeight - top;
     const maxRadius = Math.hypot(Math.max(left, right), Math.max(top, bottom));
@@ -40,15 +42,15 @@ export function ThemeProvider({ children }) {
       },
       {
         duration: 500,
-        easing: 'ease-in-out',
-        pseudoElement: '::view-transition-new(root)',
-      }
+        easing: "ease-in-out",
+        pseudoElement: "::view-transition-new(root)",
+      },
     );
   };
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDark);
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    document.documentElement.classList.toggle("dark", isDark);
+    localStorage.setItem("theme", isDark ? "dark" : "light");
   }, [isDark]);
 
   return (

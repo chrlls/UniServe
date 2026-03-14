@@ -2,8 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Category;
-
 class StoreMenuItemRequest extends ApiFormRequest
 {
     public function rules(): array

@@ -15,7 +15,9 @@ class UpdateUserRequest extends ApiFormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($this->route('user'))],
             'password' => ['nullable', 'string', Password::defaults()],
-            'role' => ['required', 'string', 'in:' . implode(',', [User::ROLE_ADMIN, User::ROLE_CASHIER, User::ROLE_CUSTOMER])],
+            'role' => ['required', 'string', 'in:'.implode(',', [User::ROLE_ADMIN, User::ROLE_CASHIER, User::ROLE_CUSTOMER])],
+            'avatar_style' => ['nullable', 'string', 'in:'.implode(',', User::AVATAR_STYLES)],
+            'avatar_seed' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

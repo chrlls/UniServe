@@ -135,6 +135,63 @@ class OrderInventoryFlowTest extends TestCase
         ]);
     }
 
+    public function test_cancelling_an_active_order_restores_stock_and_logs_it(): void
+    {
+        $cashier = User::factory()->cashier()->create();
+        $menuItem = MenuItem::factory()->create([
+            'stock_quantity' => 10,
+            'price' => 45,
+        ]);
+
+        $order = Order::factory()->create([
+            'cashier_id' => $cashier->id,
+            'customer_id' => null,
+            'status' => Order::STATUS_PENDING,
+            'total_amount' => 90,
+        ]);
+
+        $order->items()->create([
+            'menu_item_id' => $menuItem->id,
+            'quantity' => 2,
+            'unit_price' => 45,
+            'line_total' => 90,
+        ]);
+
+        $menuItem->update(['stock_quantity' => 8]);
+
+        InventoryLog::create([
+            'menu_item_id' => $menuItem->id,
+            'changed_by' => $cashier->id,
+            'change_type' => InventoryLog::TYPE_DEDUCT,
+            'quantity_before' => 10,
+            'quantity_change' => -2,
+            'quantity_after' => 8,
+            'reason' => 'Stock deducted for order '.$order->order_number,
+        ]);
+
+        Sanctum::actingAs($cashier);
+
+        $response = $this->patchJson("/api/orders/{$order->id}/status", [
+            'status' => Order::STATUS_CANCELLED,
+        ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.order.status', Order::STATUS_CANCELLED);
+
+        $this->assertDatabaseHas('menu_items', [
+            'id' => $menuItem->id,
+            'stock_quantity' => 10,
+        ]);
+
+        $this->assertDatabaseHas('inventory_logs', [
+            'menu_item_id' => $menuItem->id,
+            'change_type' => InventoryLog::TYPE_RESTOCK,
+            'quantity_change' => 2,
+            'reason' => 'Stock restored for cancelled order '.$order->order_number,
+        ]);
+    }
+
     public function test_customer_cannot_view_another_customers_order(): void
     {
         $owner = User::factory()->customer()->create();

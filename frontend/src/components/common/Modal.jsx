@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) {
   if (!isOpen) return null;
@@ -17,13 +18,16 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
           <h2 className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>
             {title}
           </h2>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="p-1 rounded-lg transition-colors hover:bg-white/10"
+            className="h-8 w-8 rounded-lg transition-colors hover:bg-white/10"
             style={{ color: 'var(--color-text-secondary)' }}
           >
             <X size={20} />
-          </button>
+          </Button>
         </div>
         {children}
       </div>

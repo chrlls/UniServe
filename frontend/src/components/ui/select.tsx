@@ -3,6 +3,7 @@ import * as React from 'react'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { Check, ChevronDown, ChevronUp } from 'lucide-react'
 
+import { ModalPortalContainerContext } from '@/components/ui/app-modal-context'
 import { cn } from '@/lib/utils'
 
 const Select = SelectPrimitive.Root
@@ -21,7 +22,7 @@ const SelectTrigger = React.forwardRef<
       // Layout
       'flex h-11 w-full items-center justify-between rounded-xl px-3.5 py-2 text-sm',
       // Fill surface, no border at rest
-      'bg-muted/60 text-foreground',
+      'bg-muted/78 text-foreground shadow-sm',
       'border border-transparent',
       // Placeholder text when nothing selected
       '[&>span[data-placeholder]]:text-muted-foreground/60',
@@ -29,7 +30,7 @@ const SelectTrigger = React.forwardRef<
       'transition-[border-color,box-shadow,background-color] duration-150 ease-out',
       // Focus
       'focus:outline-none',
-      'focus:bg-background',
+      'focus:bg-muted/90',
       'focus:border-ring',
       'focus:ring-[3px] focus:ring-ring/20',
       // Line-clamp on selected value
@@ -86,15 +87,19 @@ SelectScrollDownButton.displayName =
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = 'popper', ...props }, ref) => (
-  <SelectPrimitive.Portal>
+>(({ className, children, position = 'popper', ...props }, ref) => {
+  const modalPortalContainer = React.useContext(ModalPortalContainerContext)
+
+  return (
+  <SelectPrimitive.Portal container={modalPortalContainer ?? undefined}>
     <SelectPrimitive.Content
       ref={ref}
+      data-slot="select-content"
       className={cn(
         // Base
         'relative z-50 min-w-[8rem] overflow-hidden',
-        'rounded-xl border border-border',
-        'bg-popover/95 backdrop-blur-sm text-popover-foreground',
+        'rounded-2xl border border-border/50',
+        'bg-popover/98 backdrop-blur-sm text-popover-foreground',
         'shadow-xl shadow-black/10',
         // Animations — fast, matches AppModal feel
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
@@ -108,6 +113,8 @@ const SelectContent = React.forwardRef<
         className,
       )}
       position={position}
+      onPointerDown={(event) => event.stopPropagation()}
+      onClick={(event) => event.stopPropagation()}
       {...props}
     >
       <SelectScrollUpButton />
@@ -123,7 +130,8 @@ const SelectContent = React.forwardRef<
       <SelectScrollDownButton />
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
-))
+  )
+})
 SelectContent.displayName = SelectPrimitive.Content.displayName
 
 const SelectLabel = React.forwardRef<
@@ -146,9 +154,10 @@ const SelectItem = React.forwardRef<
     ref={ref}
     className={cn(
       'relative flex w-full cursor-default select-none items-center',
-      'rounded-lg py-2 pl-8 pr-3 text-sm outline-none',
+        'rounded-xl py-2.5 pl-8 pr-3 text-sm outline-none',
       'transition-colors duration-100',
-      'focus:bg-accent focus:text-accent-foreground',
+        'focus:bg-primary focus:text-primary-foreground',
+        'data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className,
     )}

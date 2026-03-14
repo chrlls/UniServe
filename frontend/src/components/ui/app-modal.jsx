@@ -13,6 +13,7 @@
  *   </AppModal>
  */
 
+import React, { useState } from 'react';
 import {
   Modal,
   ModalContent,
@@ -20,6 +21,7 @@ import {
   ModalBody,
   ModalFooter,
 } from '@heroui/modal';
+import { ModalPortalContainerContext } from '@/components/ui/app-modal-context';
 
 /* Minimal blur — noticeable but not heavy */
 const backdropClass = 'bg-black/40 backdrop-blur-[2px]';
@@ -89,6 +91,8 @@ export function AppModal({
   scrollBehavior = 'inside',
   className = '',
 }) {
+  const [portalContainer, setPortalContainer] = useState(null);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -132,12 +136,14 @@ export function AppModal({
     >
       <ModalContent>
         {() => (
-          <>
-            {title != null && (
-              <ModalHeader>{title}</ModalHeader>
-            )}
-            {children}
-          </>
+          <ModalPortalContainerContext.Provider value={portalContainer}>
+            <div ref={setPortalContainer}>
+              {title != null && (
+                <ModalHeader>{title}</ModalHeader>
+              )}
+              {children}
+            </div>
+          </ModalPortalContainerContext.Provider>
         )}
       </ModalContent>
     </Modal>

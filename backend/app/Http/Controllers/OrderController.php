@@ -13,9 +13,7 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
-    public function __construct(private readonly OrderService $orderService)
-    {
-    }
+    public function __construct(private readonly OrderService $orderService) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -76,11 +74,12 @@ class OrderController extends Controller
 
     public function updateStatus(UpdateOrderStatusRequest $request, Order $order): JsonResponse
     {
-        $order = $this->orderService->updateStatus($order, $request->validated('status'));
+        /** @var User $user */
+        $user = $request->user();
+        $order = $this->orderService->updateStatus($order, $request->validated('status'), $user);
 
         return $this->successResponse([
             'order' => (new OrderResource($order))->resolve(),
         ], 'Order status updated successfully.');
     }
 }
-

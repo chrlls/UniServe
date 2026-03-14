@@ -10,9 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { POSPageSkeleton } from '@/components/skeletons/AdminSkeletons';
+import { useAccountPreferences } from '@/lib/preferences';
 
 export default function POSInterface() {
   const { cartItems, addToCart, removeFromCart, updateQuantity, clearCart, totalAmount, totalItems } = useCart();
+  const { formatNumber, t } = useAccountPreferences();
 
   const [menuItems, setMenuItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -23,6 +25,13 @@ export default function POSInterface() {
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
+
+  function formatCurrency(value) {
+    return `PHP ${formatNumber(value || 0, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -59,11 +68,13 @@ export default function POSInterface() {
     try {
       const order = await orderService.create({
         payment_method: paymentMethod,
-        items: cartItems.map((i) => ({ menu_item_id: i.id, quantity: i.quantity })),
+        items: cartItems.map((item) => ({
+          menu_item_id: item.id,
+          quantity: item.quantity,
+        })),
       });
       clearCart();
       setOrderSuccess(order);
-      // Refresh menu to get updated stock
       fetchMenu();
     } catch (err) {
       alert(err.message);
@@ -74,13 +85,15 @@ export default function POSInterface() {
 
   if (orderSuccess) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4 text-center">
         <CheckCircle size={64} className="text-primary" />
-        <h2 className="text-2xl font-bold">Order Placed!</h2>
+        <h2 className="text-2xl font-bold">{t('pos.orderPlaced')}</h2>
         <p className="text-lg font-mono text-primary">{orderSuccess.order_number}</p>
-        <p className="text-muted-foreground">Total: ₱{Number(orderSuccess.total_amount).toFixed(2)}</p>
+        <p className="text-muted-foreground">
+          {t('pos.total')}: {formatCurrency(orderSuccess.total_amount)}
+        </p>
         <Button onClick={() => setOrderSuccess(null)} className="mt-4">
-          New Order
+          {t('pos.newOrder')}
         </Button>
       </div>
     );
@@ -92,56 +105,56 @@ export default function POSInterface() {
 
   return (
     <div className="flex h-[calc(100vh-6rem)] gap-4">
-      {/* Left: Menu Browser */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="mb-4">
-          <h1 className="text-xl font-bold">POS Terminal</h1>
+          <h1 className="text-xl font-bold">{t('pos.title')}</h1>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-3">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <Input
-            type="text"
-            placeholder="Search items..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        <div className="mb-3 flex shrink-0 flex-col gap-3">
+          <div className="relative w-full max-w-4xl">
+            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder={t('pos.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              className="h-10 rounded-lg pl-9 focus-visible:ring-2 focus-visible:ring-ring/15"
+            />
+          </div>
+
+          <div className="flex overflow-x-auto pb-2">
+            <div className="flex min-w-max gap-2">
+              <Button
+                size="sm"
+                variant={!selectedCategory ? 'default' : 'outline'}
+                onClick={() => setSelectedCategory(null)}
+                className="h-7 whitespace-nowrap rounded-full text-xs"
+              >
+                {t('pos.all')}
+              </Button>
+              {categories.map((category) => (
+                <Button
+                  key={category.id}
+                  size="sm"
+                  variant={selectedCategory === category.id ? 'default' : 'outline'}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className="h-7 whitespace-nowrap rounded-full text-xs"
+                >
+                  {category.name}
+                </Button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Category pills */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-3 shrink-0">
-          <Button
-            size="sm"
-            variant={!selectedCategory ? 'default' : 'outline'}
-            onClick={() => setSelectedCategory(null)}
-            className="rounded-full text-xs whitespace-nowrap h-7"
-          >
-            All
-          </Button>
-          {categories.map((cat) => (
-            <Button
-              key={cat.id}
-              size="sm"
-              variant={selectedCategory === cat.id ? 'default' : 'outline'}
-              onClick={() => setSelectedCategory(cat.id)}
-              className="rounded-full text-xs whitespace-nowrap h-7"
-            >
-              {cat.name}
-            </Button>
-          ))}
-        </div>
-
-        {/* Items Grid */}
         <div className="flex-1 overflow-y-auto">
           {error ? (
             <div className="flex flex-col items-center py-8">
               <AlertCircle size={32} className="text-destructive" />
-              <p className="text-sm mt-2 text-destructive">{error}</p>
+              <p className="mt-2 text-sm text-destructive">{error}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {menuItems.map((item) => (
                 <MenuItemCard key={item.id} item={item} showAddToCart onAddToCart={addToCart} />
               ))}
@@ -150,34 +163,33 @@ export default function POSInterface() {
         </div>
       </div>
 
-      {/* Right: Cart Panel */}
-      <Card className="w-80 lg:w-96 flex flex-col shrink-0 overflow-hidden">
-        {/* Cart header */}
-        <CardHeader className="px-4 py-3 border-b shrink-0">
+      <Card className="flex w-80 shrink-0 flex-col overflow-hidden lg:w-96">
+        <CardHeader className="shrink-0 border-b px-4 py-3">
           <h2 className="font-semibold leading-none">
-            Cart{' '}
+            {t('pos.cart')}{' '}
             {totalItems > 0 && (
-              <span className="text-sm font-normal text-muted-foreground">({totalItems} items)</span>
+              <span className="text-sm font-normal text-muted-foreground">
+                {t('pos.cartItemsCount', { count: totalItems })}
+              </span>
             )}
           </h2>
         </CardHeader>
 
-        {/* Cart items */}
         <ScrollArea className="flex-1">
-          <div className="p-4 space-y-3">
+          <div className="space-y-3 p-4">
             {cartItems.length === 0 ? (
-              <p className="text-sm text-center py-8 text-muted-foreground">
-                Tap items to add them to the cart
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {t('pos.emptyCart')}
               </p>
             ) : (
               cartItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-3 p-2 rounded-lg bg-muted/40"
+                  className="flex items-center gap-3 rounded-lg bg-muted/40 p-2"
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{item.name}</p>
-                    <p className="text-xs text-primary">₱{Number(item.price).toFixed(2)}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{item.name}</p>
+                    <p className="text-xs text-primary">{formatCurrency(item.price)}</p>
                   </div>
                   <div className="flex items-center gap-1">
                     <Button
@@ -188,7 +200,7 @@ export default function POSInterface() {
                     >
                       <Minus size={12} />
                     </Button>
-                    <span className="text-sm w-6 text-center">{item.quantity}</span>
+                    <span className="w-6 text-center text-sm">{item.quantity}</span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -198,8 +210,8 @@ export default function POSInterface() {
                       <Plus size={12} />
                     </Button>
                   </div>
-                  <span className="text-sm font-medium w-16 text-right">
-                    ₱{(item.price * item.quantity).toFixed(2)}
+                  <span className="w-20 text-right text-sm font-medium">
+                    {formatCurrency(item.price * item.quantity)}
                   </span>
                   <Button
                     variant="ghost"
@@ -215,10 +227,8 @@ export default function POSInterface() {
           </div>
         </ScrollArea>
 
-        {/* Cart footer */}
         {cartItems.length > 0 && (
-          <CardContent className="p-4 space-y-3 border-t shrink-0">
-            {/* Payment method */}
+          <CardContent className="shrink-0 space-y-3 border-t p-4">
             <div className="flex gap-2">
               <Button
                 variant={paymentMethod === 'cash' ? 'default' : 'outline'}
@@ -226,7 +236,7 @@ export default function POSInterface() {
                 size="sm"
                 onClick={() => setPaymentMethod('cash')}
               >
-                <Banknote size={15} /> Cash
+                <Banknote size={15} /> {t('pos.payment.cash')}
               </Button>
               <Button
                 variant={paymentMethod === 'card' ? 'default' : 'outline'}
@@ -234,24 +244,22 @@ export default function POSInterface() {
                 size="sm"
                 onClick={() => setPaymentMethod('card')}
               >
-                <CreditCard size={15} /> Card
+                <CreditCard size={15} /> {t('pos.payment.card')}
               </Button>
             </div>
 
-            {/* Total */}
             <div className="flex items-center justify-between">
-              <span className="font-medium text-muted-foreground">Total</span>
-              <span className="text-xl font-bold text-primary">₱{totalAmount.toFixed(2)}</span>
+              <span className="font-medium text-muted-foreground">{t('pos.total')}</span>
+              <span className="text-xl font-bold text-primary">{formatCurrency(totalAmount)}</span>
             </div>
 
-            {/* Place Order */}
             <Button
               className="w-full"
               size="lg"
               onClick={handlePlaceOrder}
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Placing Order...' : 'Place Order'}
+              {isSubmitting ? t('pos.placingOrder') : t('pos.placeOrder')}
             </Button>
 
             <Button
@@ -260,7 +268,7 @@ export default function POSInterface() {
               size="sm"
               onClick={clearCart}
             >
-              Clear Cart
+              {t('pos.clearCart')}
             </Button>
           </CardContent>
         )}

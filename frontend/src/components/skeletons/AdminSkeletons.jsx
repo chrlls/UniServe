@@ -242,7 +242,34 @@ export function DashboardPageSkeleton() {
         <ChartCardSkeleton type="line" />
       </div>
 
-      <ActivityListSkeleton rows={5} />
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <ActivityListSkeleton rows={5} />
+        <Card className="rounded-2xl shadow-sm">
+          <CardHeader className="pb-2">
+            <Skeleton className="h-4 w-36" />
+          </CardHeader>
+          <CardContent className="px-3 pb-3 pt-0">
+            <ul className="space-y-2">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <li key={index} className="flex items-center gap-3 rounded-xl bg-card px-4 py-3">
+                  <Skeleton className="h-9 w-9 rounded-full" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-3.5 w-32" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <div className="space-y-2 text-right">
+                    <Skeleton className="h-3.5 w-20" />
+                    <Skeleton className="h-3 w-14" />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+          <CardFooter className="pb-4 pt-3">
+            <Skeleton className="h-3 w-24" />
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -330,39 +357,52 @@ export function OrderQueueSkeleton({ isCashier = false }) {
         </div>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        <div className={cn('flex w-full gap-4', isCashier ? 'min-w-[1080px]' : 'min-w-[1480px]')}>
+      <div className="overflow-x-auto pb-4">
+        <div className={cn('flex w-full gap-4', isCashier ? 'min-w-[1060px]' : 'min-w-[1440px]')}>
           {Array.from({ length: columns }).map((_, colIndex) => (
-            <div key={colIndex} className="flex-1 basis-0 min-w-[22rem] flex flex-col">
-              <div className="flex items-center justify-between p-3 rounded-t-xl border border-b-0 bg-muted/50 border-border">
-                <Skeleton className="h-4 w-24" />
-                <StatusPillSkeleton className="h-5 w-8 rounded-md" />
+            <div key={colIndex} className="flex min-w-[21.5rem] flex-1 basis-0 flex-col">
+              <div className="flex items-center justify-between rounded-t-2xl border border-b-0 border-border/60 bg-card/95 px-4 py-3">
+                <div className="flex items-center gap-2.5">
+                  <Skeleton className="h-8 w-8 rounded-xl" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+                <StatusPillSkeleton className="h-6 w-8 rounded-full" />
               </div>
-              <div className="flex-1 border border-t-0 rounded-b-xl p-3 space-y-3 bg-muted/30 border-border min-h-[28rem]">
+              <div className="flex min-h-[32rem] flex-1 flex-col rounded-b-2xl border border-t-0 border-border/60 bg-card/80 p-3 shadow-sm">
                 {Array.from({ length: 3 }).map((__, cardIndex) => (
-                  <Card key={cardIndex} className="border-l-4 border-l-border rounded-xl shadow-sm">
-                    <CardContent className="p-4 space-y-3">
+                  <Card key={cardIndex} className="mb-3 overflow-hidden rounded-2xl border border-border/55 border-l-[3px] border-l-border bg-card/95 shadow-sm">
+                    <CardContent className="space-y-4 p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-2">
-                          <Skeleton className="h-3 w-20" />
-                          <Skeleton className="h-3.5 w-24" />
+                          <Skeleton className="h-3 w-24" />
+                          <Skeleton className="h-4 w-28" />
                         </div>
-                        <StatusPillSkeleton className="h-6 w-16" />
+                        <StatusPillSkeleton className="h-6 w-20 rounded-full" />
                       </div>
-                      <Skeleton className="h-3 w-full" />
-                      <Skeleton className="h-3 w-11/12" />
-                      <Skeleton className="h-3 w-10/12" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-11/12" />
+                        <Skeleton className="h-3 w-8/12" />
+                      </div>
+                      <Skeleton className="h-px w-full" />
                       <div className="flex items-center justify-between">
-                        <Skeleton className="h-3.5 w-20" />
-                        <Skeleton className="h-5 w-20" />
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-6 w-24" />
                       </div>
-                      <div className="flex gap-2 pt-1">
-                        <Skeleton className="h-9 flex-1 rounded-md" />
-                        <Skeleton className="h-9 w-9 rounded-md" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-10 flex-1 rounded-xl" />
+                        <Skeleton className="h-10 w-10 rounded-xl" />
                       </div>
                     </CardContent>
                   </Card>
                 ))}
+                <div className="mt-2 flex items-center justify-between border-t border-border/50 px-1 pt-2">
+                  <Skeleton className="h-3 w-20" />
+                  <div className="flex gap-1.5">
+                    <Skeleton className="h-8 w-8 rounded-xl" />
+                    <Skeleton className="h-8 w-8 rounded-xl" />
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -380,12 +420,16 @@ export function POSPageSkeleton() {
           <Skeleton className="h-7 w-32" />
         </div>
 
-        <Skeleton className="mb-3 h-9 w-full rounded-lg" />
+        <div className="mb-3 flex shrink-0 flex-col gap-3">
+          <Skeleton className="h-9 w-full rounded-lg" />
 
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-3 shrink-0">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-7 w-20 rounded-full" />
-          ))}
+          <div className="flex overflow-x-auto pb-2">
+            <div className="flex min-w-max gap-2">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Skeleton key={index} className="h-7 w-20 rounded-full" />
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">

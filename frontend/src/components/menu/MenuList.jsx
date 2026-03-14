@@ -11,12 +11,14 @@ import categoryService from '../../services/categoryService';
 import orderService from '../../services/orderService';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useAccountPreferences } from '@/lib/preferences';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { goeyToast } from '@/components/ui/goey-toast';
 import {
   Sheet, SheetContent, SheetDescription,
   SheetFooter, SheetHeader, SheetTitle, SheetTrigger,
@@ -25,6 +27,7 @@ import {
 export default function MenuList() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { formatNumber } = useAccountPreferences();
   const { cartItems, addToCart, removeFromCart, updateQuantity, clearCart, totalAmount, totalItems } = useCart();
 
   const [menuItems, setMenuItems] = useState([]);
@@ -36,6 +39,8 @@ export default function MenuList() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const formatCurrency = (amount) =>
+    `PHP ${formatNumber(amount, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   async function fetchData() {
     try {
@@ -78,9 +83,10 @@ export default function MenuList() {
       });
       clearCart();
       setIsCartOpen(false);
+      goeyToast.success('Order placed successfully.');
       navigate('/orders');
     } catch (err) {
-      alert(err.message);
+      goeyToast.error(err.message || 'Unable to place order.');
     } finally {
       setIsSubmitting(false);
     }
@@ -107,7 +113,7 @@ export default function MenuList() {
       className="min-h-[calc(100vh-3.5rem)] flex flex-col"
     >
       {/* Sticky header: search + cart trigger + category tabs */}
-      <div className="sticky top-0 z-20 space-y-3 bg-background/90 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="sticky top-0 z-20 space-y-3 bg-transparent p-4 backdrop-blur-0 supports-[backdrop-filter]:bg-transparent">
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -165,7 +171,7 @@ export default function MenuList() {
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-sm truncate">{item.name}</p>
                                 <p className="text-sm text-primary font-semibold">
-                                  ₱{(Number(item.price) * item.quantity).toFixed(2)}
+                                  {formatCurrency(Number(item.price) * item.quantity)}
                                 </p>
                               </div>
                               <div className="flex items-center gap-1">
@@ -192,11 +198,11 @@ export default function MenuList() {
                     <div className="space-y-3 rounded-xl bg-muted/35 p-3">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Subtotal</span>
-                        <span>₱{totalAmount.toFixed(2)}</span>
+                        <span>{formatCurrency(totalAmount)}</span>
                       </div>
                       <div className="flex justify-between font-bold text-lg">
                         <span>Total</span>
-                        <span className="text-primary">₱{totalAmount.toFixed(2)}</span>
+                        <span className="text-primary">{formatCurrency(totalAmount)}</span>
                       </div>
 
                       {/* Payment method */}
@@ -214,7 +220,7 @@ export default function MenuList() {
 
                     <SheetFooter className="mt-3">
                       <Button className="w-full h-11" onClick={handlePlaceOrder} disabled={isSubmitting}>
-                        {isSubmitting ? 'Placing Order...' : `Place Order · ₱${totalAmount.toFixed(2)}`}
+                        {isSubmitting ? 'Placing Order...' : `Place Order - ${formatCurrency(totalAmount)}`}
                       </Button>
                     </SheetFooter>
                   </>
@@ -228,7 +234,7 @@ export default function MenuList() {
         <ScrollArea className="w-full">
           <Tabs value={selectedCategory === null ? '__all__' : String(selectedCategory)}
             onValueChange={(v) => setSelectedCategory(v === '__all__' ? null : Number(v))}>
-            <TabsList className="h-9 w-max border-0 bg-muted/45">
+            <TabsList className="h-9 w-max border-0 bg-transparent p-0 shadow-none">
               <TabsTrigger value="__all__" className="text-sm px-4">All</TabsTrigger>
               {categories.map((cat) => (
                 <TabsTrigger key={cat.id} value={String(cat.id)} className="text-sm px-4">
@@ -315,7 +321,7 @@ export default function MenuList() {
 
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-bold text-primary">
-                        ₱{Number(item.price).toFixed(2)}
+                        {formatCurrency(item.price)}
                       </span>
                       {!isOutOfStock && (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">

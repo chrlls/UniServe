@@ -11,14 +11,14 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
           // Base layout
           'flex h-11 w-full rounded-xl px-3.5 py-2 text-sm',
           // Colours — filled surface, no border at rest
-          'bg-muted/60 text-foreground',
+          'bg-muted/78 text-foreground shadow-sm',
           'border border-transparent',
           'placeholder:text-muted-foreground/60',
           // Transition
           'transition-[border-color,box-shadow,background-color] duration-150 ease-out',
           // Focus — blue ring + subtle bright surface
           'focus-visible:outline-none',
-          'focus-visible:bg-background',
+          'focus-visible:bg-muted/90',
           'focus-visible:border-ring',
           'focus-visible:ring-[3px] focus-visible:ring-ring/20',
           // Disabled

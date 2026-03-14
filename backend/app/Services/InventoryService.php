@@ -65,7 +65,7 @@ class InventoryService
     public function bulkRestock(array $items, ?User $user = null, ?string $reason = null): Collection
     {
         return DB::transaction(function () use ($items, $user, $reason): Collection {
-            $logs = new Collection();
+            $logs = new Collection;
 
             foreach ($items as $item) {
                 $menuItem = MenuItem::query()->findOrFail($item['menu_item_id']);

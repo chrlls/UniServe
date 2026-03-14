@@ -105,17 +105,17 @@
   --color-primary-subtle:   rgba(59, 130, 246, 0.08);
 
   /* Surfaces */
-  --color-bg:               #0F1621;
-  --color-surface:          #161F2E;
-  --color-surface-raised:   #1A2436;
-  --color-input-bg:         #1A2436;
-  --color-border:           #2A3A52;
-  --color-border-subtle:    #1E2B3C;
+  --color-bg:               #0B0E14;
+  --color-surface:          #0D121B;
+  --color-surface-raised:   #101823;
+  --color-input-bg:         #101823;
+  --color-border:           #1E2A3A;
+  --color-border-subtle:    #151D2A;
 
   /* Text */
-  --color-text:             #E2EBF5;
-  --color-text-secondary:   #94AAC8;
-  --color-text-muted:       #5A7595;
+  --color-text:             #E6E6EF;
+  --color-text-secondary:   #A1AFC5;
+  --color-text-muted:       #7C8BA3;
 
   /* Semantic */
   --color-error:            #EF4444;
@@ -126,22 +126,22 @@
   --color-success-bg:       rgba(34, 197, 94, 0.12);
 
   /* shadcn/ui aliases */
-  --color-background:             #0F1621;
-  --color-foreground:             #E2EBF5;
-  --color-card:                   #161F2E;
-  --color-card-foreground:        #E2EBF5;
-  --color-popover:                #1A2436;
-  --color-popover-foreground:     #E2EBF5;
+  --color-background:             #0B0E14;
+  --color-foreground:             #E6E6EF;
+  --color-card:                   #101823;
+  --color-card-foreground:        #E6E6EF;
+  --color-popover:                #101823;
+  --color-popover-foreground:     #E6E6EF;
   --color-primary-foreground:     #FFFFFF;
-  --color-secondary:              #1E2B3C;
-  --color-secondary-foreground:   #CBD5E1;
-  --color-muted:                  #1E2B3C;
-  --color-muted-foreground:       #7A9BBE;
+  --color-secondary:              #141D2A;
+  --color-secondary-foreground:   #C7D2E3;
+  --color-muted:                  #141D2A;
+  --color-muted-foreground:       #8E9BB0;
   --color-accent:                 #3B82F6;
   --color-accent-foreground:      #FFFFFF;
   --color-destructive:            #EF4444;
   --color-destructive-foreground: #FFFFFF;
-  --color-input:                  #2A3A52;
+  --color-input:                  #1E2A3A;
   --color-ring:                   #3B82F6;
 
   /* Shadows */
@@ -152,9 +152,9 @@
   --shadow-blue: 0 4px 14px rgba(59, 130, 246, 0.3);
 
   /* Sidebar tokens (dark) */
-  --color-sidebar:            #161F2E;
-  --color-sidebar-foreground: #E2EBF5;
-  --color-sidebar-border:     #2A3A52;
+  --color-sidebar:            #0D121B;
+  --color-sidebar-foreground: #E6E6EF;
+  --color-sidebar-border:     #1E2A3A;
   --color-sidebar-accent:     rgba(59, 130, 246, 0.08);
   --color-sidebar-accent-foreground: #93C5FD;
   --color-sidebar-primary:    #3B82F6;

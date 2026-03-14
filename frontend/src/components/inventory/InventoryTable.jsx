@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { toast } from 'sonner';
+import { goeyToast } from '@/components/ui/goey-toast';
+import { useAccountPreferences } from '@/lib/preferences';
 
 export default function InventoryTable({
   items,
@@ -18,6 +19,7 @@ export default function InventoryTable({
   pagination,
   onPageChange,
 }) {
+  const { formatDateTime } = useAccountPreferences();
   const [editingId, setEditingId] = useState(null);
   const [editQty, setEditQty] = useState('');
   const [editReason, setEditReason] = useState('');
@@ -61,7 +63,7 @@ export default function InventoryTable({
       cancelEditing();
     } catch (err) {
       setEditError(err.message || 'Failed to update stock.');
-      toast.error(err.message || 'Failed to update stock.');
+      goeyToast.error(err.message || 'Failed to update stock.');
     } finally {
       setSubmitting(false);
     }
@@ -84,7 +86,7 @@ export default function InventoryTable({
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-      <Card className="xl:min-h-[560px] flex flex-col">
+      <Card className="xl:min-h-[560px] flex flex-col rounded-2xl border-0 bg-card shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Current Stock</CardTitle>
         </CardHeader>
@@ -105,8 +107,8 @@ export default function InventoryTable({
                       <col style={{ width: '15%' }} />
                       <col style={{ width: '15%' }} />
                     </colgroup>
-                    <TableHeader>
-                      <TableRow>
+                    <TableHeader className="[&_tr]:border-b-0">
+                      <TableRow className="border-b-0 hover:bg-transparent">
                         <TableHead className="w-[22%]">Item</TableHead>
                         <TableHead className="w-[18%] hidden sm:table-cell">Category</TableHead>
                         <TableHead className="w-[15%] text-right">Stock</TableHead>
@@ -128,7 +130,7 @@ export default function InventoryTable({
                       )}
 
                       {items.map((item) => (
-                        <TableRow key={item.id} className="hover:bg-muted/40 focus-within:bg-muted/40 transition-colors">
+                        <TableRow key={item.id} className="border-border/20 hover:bg-muted/40 focus-within:bg-muted/40 transition-colors">
                           <TableCell className="w-[22%] font-medium">{item.name}</TableCell>
                           <TableCell className="w-[18%] hidden sm:table-cell text-muted-foreground">
                             {item.category?.name || '—'}
@@ -235,7 +237,7 @@ export default function InventoryTable({
           </ScrollArea>
 
           {pagination?.lastPage > 1 && (
-            <div className="border-t px-4 py-3">
+            <div className="border-t border-border/20 px-4 py-3">
               <div className="flex flex-col items-center gap-2">
                 <p className="text-xs text-muted-foreground">
                   Showing {pagination.from ?? 0}–{pagination.to ?? 0} of {pagination.total} items
@@ -290,17 +292,20 @@ export default function InventoryTable({
         </CardContent>
       </Card>
 
-      <Card className="xl:min-h-[560px] flex flex-col">
+      <Card className="xl:min-h-[560px] flex flex-col rounded-2xl border-0 bg-card shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center justify-between">
             <span className="flex items-center gap-2"><Package size={16} /> Recent Activity</span>
             {recentLogs && recentLogs.length > 0 && onSeeAll && (
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={onSeeAll}
-                className="text-xs font-normal text-muted-foreground hover:text-primary transition-colors"
+                className="h-7 px-2 text-xs font-normal text-muted-foreground hover:text-primary"
               >
                 See all
-              </button>
+              </Button>
             )}
           </CardTitle>
         </CardHeader>
@@ -333,7 +338,7 @@ export default function InventoryTable({
                         {log.quantity_change}
                       </p>
                       <p className="text-[11px] text-muted-foreground">
-                        {new Date(log.created_at).toLocaleString()}
+                        {formatDateTime(log.created_at)}
                       </p>
                     </div>
 

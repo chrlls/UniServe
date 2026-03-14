@@ -77,6 +77,32 @@ class AuthControllerTest extends TestCase
             ->assertJsonPath('errors.email.0', 'The provided credentials are incorrect.');
     }
 
+    public function test_login_is_rate_limited_after_repeated_failures(): void
+    {
+        User::factory()->create([
+            'email' => 'admin@example.com',
+            'password' => 'password',
+            'role' => User::ROLE_ADMIN,
+        ]);
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->postJson('/api/auth/login', [
+                'email' => 'admin@example.com',
+                'password' => 'wrong-password',
+            ])->assertUnprocessable();
+        }
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'admin@example.com',
+            'password' => 'wrong-password',
+        ]);
+
+        $response
+            ->assertStatus(429)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('errors.email.0', 'Too many login attempts.');
+    }
+
     public function test_logout_clears_the_authenticated_session(): void
     {
         $user = User::factory()->create([

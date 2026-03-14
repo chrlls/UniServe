@@ -34,6 +34,8 @@ class UserController extends Controller
             'email' => $request->validated('email'),
             'password' => Hash::make($request->validated('password')),
             'role' => $request->validated('role'),
+            'avatar_style' => $request->validated('avatar_style'),
+            'avatar_seed' => $request->validated('avatar_seed'),
         ]);
 
         return $this->successResponse([
@@ -48,6 +50,14 @@ class UserController extends Controller
             'email' => $request->validated('email'),
             'role' => $request->validated('role'),
         ];
+
+        if ($request->filled('avatar_style')) {
+            $data['avatar_style'] = $request->validated('avatar_style');
+        }
+
+        if ($request->filled('avatar_seed')) {
+            $data['avatar_seed'] = $request->validated('avatar_seed');
+        }
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->validated('password'));

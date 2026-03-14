@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   AlertTriangle,
@@ -18,6 +18,8 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react';
+// eslint-disable-next-line no-unused-vars -- used as <motion.div> JSX element
+import { motion } from 'framer-motion';
 
 import menuService from '../../services/menuService';
 import categoryService from '../../services/categoryService';
@@ -47,7 +49,7 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { AppModal, AppModalBody, AppModalFooter } from '@/components/ui/app-modal';
-import { goeyToast } from '@/components/ui/goey-toaster';
+import { goeyToast } from '@/components/ui/goey-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,6 +84,20 @@ import {
 } from '@/components/ui/pagination';
 import { Textarea } from '@/components/ui/textarea';
 import { MenuManagementSkeleton } from '@/components/skeletons/AdminSkeletons';
+
+const KPI_CARD_CLASS = 'rounded-2xl border-0 bg-card shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:bg-card/95 hover:shadow-md';
+
+function getKpiCardMotion(index = 0) {
+  return {
+    initial: { opacity: 0, y: 14 },
+    animate: { opacity: 1, y: 0 },
+    transition: {
+      duration: 0.28,
+      delay: 0.06 + (index * 0.045),
+      ease: [0.22, 1, 0.36, 1],
+    },
+  };
+}
 
 function getStockState(item) {
   const stockQuantity = Number(item.stock_quantity ?? 0);
@@ -459,7 +475,7 @@ export default function MenuManagementPage() {
         <div>
           <h1 className="text-2xl font-bold">Menu Management</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {filteredItems.length} of {menuItems.length} items • {categories.length} categories
+            {filteredItems.length} of {menuItems.length} items - {categories.length} categories
           </p>
         </div>
         <Button onClick={() => setEditingItem({})} className="gap-2">
@@ -469,24 +485,26 @@ export default function MenuManagementPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="border border-border bg-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                  <p className="mt-1 text-2xl font-semibold">{stat.value}</p>
+        {stats.map((stat, index) => (
+          <motion.div key={stat.label} {...getKpiCardMotion(index)}>
+            <Card className={KPI_CARD_CLASS}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    <p className="mt-1 text-2xl font-semibold">{stat.value}</p>
+                  </div>
+                  <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', stat.badgeClassName)}>
+                    <stat.icon className={cn('h-5 w-5', stat.iconClassName)} />
+                  </div>
                 </div>
-                <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', stat.badgeClassName)}>
-                  <stat.icon className={cn('h-5 w-5', stat.iconClassName)} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
-      <Card className="border border-border bg-card">
+      <Card className="rounded-2xl border-0 bg-card shadow-sm">
         <CardContent className="space-y-4 p-4">
           <div className="flex flex-col gap-3 lg:flex-row">
             <div className="relative flex-1">
@@ -584,12 +602,14 @@ export default function MenuManagementPage() {
                 const isSelected = selectedCategory === category.id;
 
                 return (
-                  <button
+                  <Button
                     key={category.id}
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setSelectedCategory(category.id)}
                     className={cn(
-                      'flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                      'h-8 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
                       isSelected
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -605,7 +625,7 @@ export default function MenuManagementPage() {
                     >
                       {category.count}
                     </Badge>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -618,7 +638,7 @@ export default function MenuManagementPage() {
         </CardContent>
       </Card>
 
-      <Card className="border border-border bg-card">
+      <Card className="rounded-2xl border-0 bg-card shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold">Menu Items</CardTitle>
           <CardDescription>
@@ -627,14 +647,14 @@ export default function MenuManagementPage() {
         </CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
+            <TableHeader className="[&_tr]:border-b-0">
+              <TableRow className="border-b-0 hover:bg-transparent">
                 <TableHead className="w-12 pl-6">
                   <Checkbox checked={allVisibleSelected} onCheckedChange={toggleSelectAll} />
                 </TableHead>
                 <TableHead>Item</TableHead>
                 <TableHead className="hidden md:table-cell">Category</TableHead>
-                <TableHead className="text-right">Price</TableHead>
+                <TableHead className="text-left">Price</TableHead>
                 <TableHead className="hidden text-right lg:table-cell">Stock</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="pr-6 text-right">Actions</TableHead>
@@ -648,7 +668,11 @@ export default function MenuManagementPage() {
                 const imageUrl = getMenuImageUrl(item);
 
                 return (
-                  <TableRow key={item.id} data-state={isSelected ? 'selected' : undefined} className="group">
+                  <TableRow
+                    key={item.id}
+                    data-state={isSelected ? 'selected' : undefined}
+                    className="group border-border/20"
+                  >
                     <TableCell className="pl-6">
                       <Checkbox checked={isSelected} onCheckedChange={() => toggleSelectItem(item.id)} />
                     </TableCell>
@@ -691,11 +715,11 @@ export default function MenuManagementPage() {
                     </TableCell>
 
                     <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {item.category?.name || '—'}
+                      {item.category?.name || '-'}
                     </TableCell>
 
-                    <TableCell className="text-right font-medium text-primary">
-                      ₱{Number(item.price ?? 0).toFixed(2)}
+                    <TableCell className="text-left font-medium text-primary">
+                      PHP {Number(item.price ?? 0).toFixed(2)}
                     </TableCell>
 
                     <TableCell className="hidden text-right lg:table-cell">
@@ -726,7 +750,7 @@ export default function MenuManagementPage() {
                     </TableCell>
 
                     <TableCell className="pr-6 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                      <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -765,7 +789,7 @@ export default function MenuManagementPage() {
               })}
 
               {filteredItems.length === 0 && (
-                <TableRow>
+                <TableRow className="border-border/20">
                   <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
                     No menu items match the selected filters.
                   </TableCell>
@@ -775,7 +799,7 @@ export default function MenuManagementPage() {
           </Table>
 
           {filteredItems.length > 0 && (
-            <div className="flex flex-col items-start justify-between gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center">
+            <div className="flex flex-col items-start justify-between gap-3 border-t border-border/20 px-4 py-3 sm:flex-row sm:items-center">
               <p className="text-xs text-muted-foreground">
                 Showing {pageStart}-{pageEnd} of {filteredItems.length}
               </p>
@@ -860,12 +884,13 @@ export default function MenuManagementPage() {
         </CardContent>
       </Card>
 
-      {/* ── Menu Item AppModal ── */}
+      {/* â”€â”€ Menu Item AppModal â”€â”€ */}
       <AppModal
         isOpen={editingItem !== null}
         onClose={() => setEditingItem(null)}
         title={editingItem?.id ? 'Edit Menu Item' : 'Add Menu Item'}
         size="lg"
+        isDismissable={false}
       >
         <AppModalBody>
           <MenuForm
@@ -877,13 +902,13 @@ export default function MenuManagementPage() {
         </AppModalBody>
       </AppModal>
 
-      {/* ── Category AppModal ── */}
+      {/* â”€â”€ Category AppModal â”€â”€ */}
       <AppModal
         isOpen={showCategoryModal}
         onClose={() => { if (!categorySubmitting) setShowCategoryModal(false); }}
         title={editingCategory?.id ? 'Edit Category' : 'Add Category'}
         size="sm"
-        isDismissable={!categorySubmitting}
+        isDismissable={false}
       >
         <AppModalBody>
           <form id="category-form" onSubmit={handleSaveCategory} className="space-y-4">
@@ -951,7 +976,7 @@ export default function MenuManagementPage() {
         </AppModalBody>
 
         <AppModalFooter>
-          <Button type="button" variant="outline" onClick={() => setShowCategoryModal(false)} disabled={categorySubmitting}>
+          <Button type="button" variant="destructive" onClick={() => setShowCategoryModal(false)} disabled={categorySubmitting}>
             Cancel
           </Button>
           <Button type="submit" form="category-form" disabled={categorySubmitting}>
@@ -960,7 +985,7 @@ export default function MenuManagementPage() {
         </AppModalFooter>
       </AppModal>
 
-      {/* ── Delete Item Alert ── */}
+      {/* â”€â”€ Delete Item Alert â”€â”€ */}
       <AlertDialog open={!!deleteItemTarget} onOpenChange={(open) => !open && setDeleteItemTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -983,7 +1008,7 @@ export default function MenuManagementPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Delete Category Alert ── */}
+      {/* â”€â”€ Delete Category Alert â”€â”€ */}
       <AlertDialog open={!!deleteCategoryTarget} onOpenChange={(open) => !open && setDeleteCategoryTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1008,3 +1033,5 @@ export default function MenuManagementPage() {
     </div>
   );
 }
+
+

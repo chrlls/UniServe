@@ -7,7 +7,9 @@ import {
   BarChart3,
   Settings,
   Users,
-  ChefHat,
+  ChevronsUpDown,
+  LogOut,
+  UserCircle2,
 } from 'lucide-react'
 
 import {
@@ -23,13 +25,26 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from '@/components/ui/sidebar'
+import { Button } from '@/components/ui/button'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { flushSync } from 'react-dom'
 import { useAuth } from '@/context/AuthContext'
+import { getInitials, getUserAvatarSrc } from '@/lib/avatar'
+import { goeyToast } from '@/components/ui/goey-toast'
 import { preloadDashboardIntent, preloadReportsIntent } from '../dashboard/chartPrefetch'
 // eslint-disable-next-line no-unused-vars -- used as <motion.div> JSX element
 import { motion } from 'framer-motion'
+import forkLogo from '@/assets/fork-logo.png'
 
 const navItems = [
   {
@@ -111,12 +126,6 @@ const navItems = [
   },
 ]
 
-const roleLabels = {
-  admin: 'Administrator',
-  cashier: 'Cashier',
-  customer: 'Customer',
-}
-
 const menuItemVariants = {
   hidden: { opacity: 0, x: -16 },
   visible: (index) => ({
@@ -134,7 +143,7 @@ const menuItemVariants = {
 export function AppSidebar() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const isMobile = useIsMobile()
 
   if (!user) return null
@@ -143,11 +152,9 @@ export function AppSidebar() {
   const menuItems = filteredNavItems.filter((item) => item.section === 'menu')
   const systemItems = filteredNavItems.filter((item) => item.section === 'system')
 
-  const initials = user.name
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
+  const initials = getInitials(user.name)
+  const avatarSrc = getUserAvatarSrc(user)
+  const accountRoute = user.role === 'admin' ? '/admin/settings' : null
 
   const transitionTo = (url) => {
     if (url === pathname) return
@@ -160,7 +167,11 @@ export function AppSidebar() {
     const main = document.querySelector('main')
     if (main) main.style.viewTransitionName = 'page'
 
-    const transition = document.startViewTransition(() => navigate(url))
+    const transition = document.startViewTransition(() => {
+      flushSync(() => {
+        navigate(url)
+      })
+    })
     transition.finished.finally(() => {
       if (main) main.style.viewTransitionName = ''
     })
@@ -177,11 +188,23 @@ export function AppSidebar() {
     }
   }
 
+  const handleSignOut = async () => {
+    try {
+      await logout()
+      goeyToast.success('You have been signed out successfully.')
+      navigate('/login', { replace: true })
+    } catch (error) {
+      goeyToast.error(
+        `Logout failed: ${error instanceof Error ? error.message : 'Unable to log out.'}`,
+      )
+    }
+  }
+
   return (
     <Sidebar
       variant="inset"
       collapsible={isMobile ? 'offcanvas' : 'none'}
-      className="min-h-svh border-r-0 bg-transparent"
+      className="min-h-svh border-r-0 bg-transparent print:hidden"
     >
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -201,9 +224,13 @@ export function AppSidebar() {
                 initial={{ rotate: -180, scale: 0 }}
                 animate={{ rotate: 0, scale: 1 }}
                 transition={{ delay: 0.08, type: 'spring', stiffness: 300, damping: 20 }}
-                className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/40 text-primary shadow-sm"
+                className="flex h-11 w-11 items-center justify-center"
               >
-                <ChefHat className="h-5 w-5" />
+                <img
+                  src={forkLogo}
+                  alt="UniServe logo"
+                  className="h-9 w-9 object-contain"
+                />
               </motion.div>
               <motion.div
                 initial={{ opacity: 0 }}
@@ -211,8 +238,8 @@ export function AppSidebar() {
                 transition={{ delay: 0.14 }}
                 className="min-w-0 flex flex-col"
               >
-                <span className="truncate text-[1.35rem] font-semibold leading-tight tracking-tight">Campus Canteen</span>
-                <span className="truncate text-sm text-muted-foreground">Management System</span>
+                <span className="truncate text-[1.35rem] font-semibold leading-tight tracking-tight">UniServe</span>
+                <span className="truncate text-sm text-muted-foreground">Canteen Management System</span>
               </motion.div>
             </div>
           </motion.div>
@@ -330,27 +357,63 @@ export function AppSidebar() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25, type: 'spring', stiffness: 300, damping: 24 }}
-              className="flex items-center gap-3"
+              className="w-full"
             >
-              <Avatar className="h-10 w-10 shadow-sm">
-                <AvatarFallback className="bg-muted/60 text-base text-foreground">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <span className="block truncate text-[1.05rem] font-semibold text-foreground">{user.name}</span>
-                <span className="block truncate text-sm text-muted-foreground">{roleLabels[user.role]}</span>
-              </div>
-              {user.role === 'admin' && (
-                <button
-                  type="button"
-                  onClick={() => navigate('/admin/settings')}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
-                  aria-label="Open settings"
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-auto w-full justify-between rounded-xl px-2.5 py-2.5 hover:bg-muted/60"
+                  >
+                    <div className="flex min-w-0 items-center gap-3 text-left">
+                      <Avatar className="h-10 w-10 shadow-sm">
+                        <AvatarImage src={avatarSrc} alt={`${user.name} avatar`} className="object-cover" />
+                        <AvatarFallback className="bg-muted/60 text-base text-foreground">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <span className="block truncate text-[1.02rem] font-semibold text-foreground">{user.name}</span>
+                        <span className="block truncate text-sm text-muted-foreground">{user.email}</span>
+                      </div>
+                    </div>
+                    <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  side="right"
+                  sideOffset={10}
+                  className="w-56 rounded-2xl border-border/60 p-1.5"
                 >
-                  <Settings className="h-4 w-4" />
-                </button>
-              )}
+                  <DropdownMenuLabel className="px-2 py-2">
+                    <div className="flex flex-col">
+                      <span className="truncate font-medium text-foreground">{user.name}</span>
+                      <span className="truncate text-xs font-normal text-muted-foreground">{user.email}</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (accountRoute) transitionTo(accountRoute)
+                    }}
+                    disabled={!accountRoute}
+                    className="gap-2 rounded-xl border-0 text-foreground shadow-none outline-none ring-0 ring-offset-0 focus:bg-muted/60 focus:text-foreground focus:shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 data-[highlighted]:bg-muted/60 data-[highlighted]:text-foreground data-[highlighted]:shadow-none data-[highlighted]:outline-none data-[highlighted]:ring-0 data-[highlighted]:ring-offset-0"
+                  >
+                    <UserCircle2 className="h-4 w-4" />
+                    Account
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleSignOut}
+                    className="gap-2 rounded-xl border-0 text-destructive shadow-none outline-none ring-0 ring-offset-0 focus:bg-muted/60 focus:text-destructive focus:shadow-none focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 data-[highlighted]:bg-muted/60 data-[highlighted]:text-destructive data-[highlighted]:shadow-none data-[highlighted]:outline-none data-[highlighted]:ring-0 data-[highlighted]:ring-offset-0"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </motion.div>
           </SidebarFooter>
         </motion.div>
