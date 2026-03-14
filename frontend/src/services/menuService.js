@@ -30,7 +30,11 @@ const menuService = {
   },
 
   async delete(id) {
-    await api.delete(`/menu-items/${id}`);
+    const { data } = await api.delete(`/menu-items/${id}`);
+    return {
+      message: data?.message ?? 'Menu item deleted successfully.',
+      ...data?.data,
+    };
   },
 
   async toggleAvailability(id, isAvailable) {

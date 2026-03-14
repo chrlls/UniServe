@@ -378,8 +378,8 @@ export default function MenuManagementPage() {
   async function confirmDeleteItem() {
     if (!deleteItemTarget) return;
     try {
-      await menuService.delete(deleteItemTarget.id);
-      goeyToast.success(`"${deleteItemTarget.name}" deleted`);
+      const result = await menuService.delete(deleteItemTarget.id);
+      goeyToast.success(result.message);
       setDeleteItemTarget(null);
       fetchData();
     } catch (err) {

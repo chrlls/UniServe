@@ -90,10 +90,26 @@ class MenuController extends Controller
 
     public function destroy(MenuItem $menuItem): JsonResponse
     {
+        if ($menuItem->orderItems()->exists() || $menuItem->inventoryLogs()->exists()) {
+            $menuItem->update([
+                'is_available' => false,
+            ]);
+            $menuItem->load('category');
+
+            return $this->successResponse([
+                'menu_item' => (new MenuItemResource($menuItem))->resolve(),
+                'deleted' => false,
+                'archived' => true,
+            ], 'Menu item has existing order or inventory history, so it was hidden instead of deleted.');
+        }
+
         $this->deleteImage($menuItem->image_path);
         $menuItem->delete();
 
-        return $this->successResponse(data: null, message: 'Menu item deleted successfully.');
+        return $this->successResponse([
+            'deleted' => true,
+            'archived' => false,
+        ], 'Menu item deleted successfully.');
     }
 
     public function toggleAvailability(ToggleMenuItemAvailabilityRequest $request, MenuItem $menuItem): JsonResponse
